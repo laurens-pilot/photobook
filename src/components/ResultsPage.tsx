@@ -121,17 +121,6 @@ export default function ResultsPage() {
           overflow: "hidden",
         }}
       >
-        {/* Subtle green glow */}
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "radial-gradient(circle at 50% 40%, rgba(8,194,37,0.05), transparent 70%)",
-            pointerEvents: "none",
-          }}
-        />
-
         {/* Navigation arrows + viewer */}
         <Box
           sx={{

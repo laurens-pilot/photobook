@@ -33,7 +33,9 @@ declare module "page-flip" {
     getPageCount(): number;
     on(event: string, callback: (e: any) => void): PageFlip;
     destroy(): void;
-    flip(page: number, corner?: string): void;
+    flip(page: number, corner?: "top" | "bottom"): void;
+    flipNext(corner: "top" | "bottom"): void;
+    flipPrev(corner: "top" | "bottom"): void;
     update(): void;
   }
 

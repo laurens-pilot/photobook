@@ -49,7 +49,8 @@ const BookViewer = forwardRef<BookViewerHandle, BookViewerProps>(
       return () => window.removeEventListener("resize", updateSize);
     }, []);
 
-    const pageHeight = Math.min(dimensions.height * 0.85, 600);
+    // Fill most of the available height — leave room for controls below
+    const pageHeight = Math.min(dimensions.height * 0.92, 900);
     const pageWidth = Math.round(pageHeight * PAGE_ASPECT);
 
     // Expose navigation methods to parent
@@ -57,10 +58,10 @@ const BookViewer = forwardRef<BookViewerHandle, BookViewerProps>(
       ref,
       () => ({
         flipNext: () => {
-          pageFlipRef.current?.turnToNextPage();
+          pageFlipRef.current?.flipNext("bottom");
         },
         flipPrev: () => {
-          pageFlipRef.current?.turnToPrevPage();
+          pageFlipRef.current?.flipPrev("top");
         },
       }),
       []
