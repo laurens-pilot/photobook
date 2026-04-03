@@ -192,6 +192,7 @@ export default function ResultsPage() {
             sx={{
               display: "flex",
               alignItems: "center",
+              justifyContent: "center",
               gap: 1.5,
               bgcolor: "rgba(226, 226, 228, 0.1)",
               backdropFilter: "blur(20px)",
@@ -199,6 +200,7 @@ export default function ResultsPage() {
               px: 3,
               py: 1,
               borderRadius: 999,
+              minWidth: 180,
             }}
           >
             <Typography
