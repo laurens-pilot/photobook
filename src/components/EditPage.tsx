@@ -82,6 +82,11 @@ export default function EditPage() {
     return result;
   }, [pages.length]);
 
+  // Clean up auto-scroll on unmount
+  useEffect(() => () => {
+    if (autoScrollRef.current !== null) cancelAnimationFrame(autoScrollRef.current);
+  }, []);
+
   // Observe container size for responsive layout
   useEffect(() => {
     const el = containerRef.current;
@@ -209,10 +214,53 @@ export default function EditPage() {
     [thumbnailUrls]
   );
 
+  // Auto-scroll during drag when cursor is near top/bottom edge
+  const autoScrollRef = useRef<number | null>(null);
+  const autoScrollSpeed = useRef(0);
+
+  const startAutoScroll = useCallback(() => {
+    if (autoScrollRef.current !== null) return;
+    const tick = () => {
+      const el = containerRef.current;
+      if (el && autoScrollSpeed.current !== 0) {
+        el.scrollTop += autoScrollSpeed.current;
+      }
+      autoScrollRef.current = requestAnimationFrame(tick);
+    };
+    autoScrollRef.current = requestAnimationFrame(tick);
+  }, []);
+
+  const stopAutoScroll = useCallback(() => {
+    if (autoScrollRef.current !== null) {
+      cancelAnimationFrame(autoScrollRef.current);
+      autoScrollRef.current = null;
+    }
+    autoScrollSpeed.current = 0;
+  }, []);
+
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-  }, []);
+
+    // Auto-scroll when dragging near top/bottom edges
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const edgeZone = 120;
+    const maxSpeed = 30;
+    const distFromTop = e.clientY - rect.top;
+    const distFromBottom = rect.bottom - e.clientY;
+
+    if (distFromTop < edgeZone) {
+      autoScrollSpeed.current = -Math.round(maxSpeed * (1 - distFromTop / edgeZone));
+      startAutoScroll();
+    } else if (distFromBottom < edgeZone) {
+      autoScrollSpeed.current = Math.round(maxSpeed * (1 - distFromBottom / edgeZone));
+      startAutoScroll();
+    } else {
+      autoScrollSpeed.current = 0;
+    }
+  }, [startAutoScroll]);
 
   const handleDragEnter = useCallback(
     (e: React.DragEvent, pageId: string, slotId: string) => {
@@ -231,6 +279,7 @@ export default function EditPage() {
   const handleDrop = useCallback(
     (e: React.DragEvent, toPageId: string, toSlotId: string) => {
       e.preventDefault();
+      stopAutoScroll();
       setDragOverInfo(null);
       if (dragSourceInfo) {
         const { pageId: fromPageId, slotId: fromSlotId } = dragSourceInfo;
@@ -240,13 +289,14 @@ export default function EditPage() {
         setDragSourceInfo(null);
       }
     },
-    [dragSourceInfo, swapPhotos]
+    [dragSourceInfo, swapPhotos, stopAutoScroll]
   );
 
   const handleDragEnd = useCallback(() => {
+    stopAutoScroll();
     setDragSourceInfo(null);
     setDragOverInfo(null);
-  }, []);
+  }, [stopAutoScroll]);
 
   const handleAddText = useCallback(() => {
     const pageId = selectedPageId || leftPage?.id;
@@ -297,6 +347,8 @@ export default function EditPage() {
       <Box
         ref={containerRef}
         onScroll={handleMainScroll}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
         sx={{
           flex: 1,
           display: "flex",
