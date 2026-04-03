@@ -307,10 +307,22 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   );
 
   const removePage = useCallback((pageId: string) => {
-    setBook((prev) => ({
-      ...prev,
-      pages: prev.pages.filter((p) => p.id !== pageId),
-    }));
+    setBook((prev) => {
+      const filtered = prev.pages.filter((p) => p.id !== pageId);
+      // Prevent deleting below 2 pages
+      if (filtered.length < 2) return prev;
+      // Ensure even page count
+      if (filtered.length % 2 !== 0) {
+        filtered.push({
+          id: uuid(),
+          slots: [],
+          textBlocks: [],
+          topCaption: "",
+          bottomCaption: "",
+        });
+      }
+      return { ...prev, pages: filtered };
+    });
   }, []);
 
   const reorderPages = useCallback((fromIndex: number, toIndex: number) => {

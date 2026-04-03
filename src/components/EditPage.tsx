@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, IconButton, Typography } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import { Stage, Layer } from "react-konva";
 import { useBook } from "@/context/BookContext";
 import PageCanvas from "./PageCanvas";
@@ -29,6 +30,8 @@ export default function EditPage() {
     movePhotoToPage,
     updateSlot,
     addTextBlock,
+    removePage,
+    reorderPages,
     thumbnailUrls,
   } = bookCtx;
 
@@ -45,6 +48,10 @@ export default function EditPage() {
   const [editingTextPageId, setEditingTextPageId] = useState<string | null>(
     null
   );
+  const [hoveredPageId, setHoveredPageId] = useState<string | null>(null);
+  const [pageDragSource, setPageDragSource] = useState<number | null>(null);
+  const [pageDragTarget, setPageDragTarget] = useState<number | null>(null);
+  const pageDragSourceRef = useRef<number | null>(null);
   const [photoPoolOpen, setPhotoPoolOpen] = useState(false);
   const [captionAnchor, setCaptionAnchor] = useState<HTMLElement | null>(null);
   const [captionPageId, setCaptionPageId] = useState<string | null>(null);
@@ -348,6 +355,44 @@ export default function EditPage() {
     setDragOverInfo(null);
   }, [stopAutoScroll]);
 
+  // --- Page drag-and-drop handlers for reordering ---
+  const handlePageDragStart = useCallback((e: React.DragEvent, pageIndex: number) => {
+    if (pageIndex === 0 || pageIndex === pages.length - 1) {
+      e.preventDefault();
+      return;
+    }
+    pageDragSourceRef.current = pageIndex;
+    setPageDragSource(pageIndex);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("application/x-page-drag", String(pageIndex));
+  }, [pages.length]);
+
+  const handlePageDragOverPage = useCallback((e: React.DragEvent, pageIndex: number) => {
+    if (pageDragSourceRef.current === null) return;
+    if (pageIndex === 0 || pageIndex === pages.length - 1) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setPageDragTarget(pageIndex);
+  }, [pages.length]);
+
+  const handlePageDropOnPage = useCallback((e: React.DragEvent, pageIndex: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const source = pageDragSourceRef.current;
+    if (source !== null && source !== pageIndex && pageIndex > 0 && pageIndex < pages.length - 1) {
+      reorderPages(source, pageIndex);
+    }
+    pageDragSourceRef.current = null;
+    setPageDragSource(null);
+    setPageDragTarget(null);
+  }, [reorderPages, pages.length]);
+
+  const handlePageDragEndCleanup = useCallback(() => {
+    pageDragSourceRef.current = null;
+    setPageDragSource(null);
+    setPageDragTarget(null);
+  }, []);
+
   const handleAddText = useCallback(() => {
     const pageId = selectedPageId || leftPage?.id;
     if (!pageId) return;
@@ -372,6 +417,148 @@ export default function EditPage() {
     },
     [addPhotos]
   );
+
+  const renderPageBlock = (page: typeof pages[number], pageIndex: number) => {
+    const isInterior = pageIndex > 0 && pageIndex < totalPages - 1;
+    const isHovered = hoveredPageId === page.id;
+    const isDragTarget = pageDragTarget === pageIndex && pageDragSource !== null;
+    const isDragSource = pageDragSource === pageIndex;
+
+    return (
+      <Box
+        onMouseEnter={() => setHoveredPageId(page.id)}
+        onMouseLeave={() => setHoveredPageId(null)}
+      >
+        <Box
+          sx={{
+            position: "relative",
+            boxShadow: isDragTarget
+              ? "0 0 0 3px #08C225, 0px 12px 32px rgba(0, 0, 0, 0.3)"
+              : "0px 12px 32px rgba(0, 0, 0, 0.3)",
+            borderRadius: 0.5,
+            overflow: "hidden",
+            opacity: isDragSource ? 0.4 : 1,
+            transition: "box-shadow 0.15s, opacity 0.15s",
+          }}
+        >
+          <Stage
+            width={pageWidth}
+            height={pageHeight}
+            onClick={handleStageClick}
+          >
+            <Layer>
+              <PageCanvas
+                page={page}
+                pageWidth={pageWidth}
+                pageHeight={pageHeight}
+                isInteractive
+                selectedSlotId={selectedPageId === page.id ? selectedSlotId : null}
+                selectedTextId={selectedPageId === page.id ? selectedTextId : null}
+                dragOverSlotId={dragOverInfo?.pageId === page.id ? dragOverInfo.slotId : null}
+                dragSourceSlotId={dragSourceInfo?.pageId === page.id ? dragSourceInfo.slotId : null}
+                onSlotClick={(slotId) => handleSlotClick(page.id, slotId)}
+                onTextClick={(textId) => handleTextClick(page.id, textId)}
+                onTextDblClick={(textId) => handleTextDblClick(page.id, textId)}
+              />
+            </Layer>
+          </Stage>
+          {/* Page-level drop zone / page drag handle */}
+          <div
+            draggable={isInterior}
+            onDragStart={(e) => {
+              if (!isInterior) { e.preventDefault(); return; }
+              handlePageDragStart(e, pageIndex);
+            }}
+            onDragOver={(e) => {
+              if (pageDragSourceRef.current !== null) {
+                handlePageDragOverPage(e, pageIndex);
+              } else {
+                handlePageDragOver(e, page.id);
+              }
+            }}
+            onDrop={(e) => {
+              if (pageDragSourceRef.current !== null) {
+                handlePageDropOnPage(e, pageIndex);
+              } else {
+                handlePageDrop(e, page.id);
+              }
+            }}
+            onDragEnd={() => {
+              handlePageDragEndCleanup();
+              handleDragEnd();
+            }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 1,
+              cursor: isInterior ? "grab" : "default",
+            }}
+          />
+          {/* Drag-and-drop overlay divs for photo slots */}
+          {page.slots.map((slot) => {
+            const isSelected = selectedPageId === page.id && selectedSlotId === slot.id;
+            return (
+              <div
+                key={slot.id}
+                draggable={!!slot.photoId && !isSelected}
+                onDragStart={(e) =>
+                  slot.photoId
+                    ? handleDragStart(e, page.id, slot.id, slot.photoId)
+                    : e.preventDefault()
+                }
+                onDragOver={(e) => handleSlotDragOver(e, page.id, slot.id)}
+                onDrop={(e) => handleDrop(e, page.id, slot.id)}
+                onDragEnd={handleDragEnd}
+                onClick={() => handleSlotClick(page.id, slot.id)}
+                style={{
+                  position: "absolute",
+                  left: (slot.x / 100) * pageWidth,
+                  top: (slot.y / 100) * pageHeight,
+                  width: (slot.width / 100) * pageWidth,
+                  height: (slot.height / 100) * pageHeight,
+                  cursor: slot.photoId
+                    ? isSelected ? "default" : "grab"
+                    : "default",
+                  pointerEvents: (isSelected && !dragSourceInfo) || pageDragSource !== null
+                    ? "none" : "auto",
+                  zIndex: 2,
+                }}
+              />
+            );
+          })}
+          {/* Delete button on hover */}
+          {isHovered && totalPages > 2 && (
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                removePage(page.id);
+                setHoveredPageId(null);
+              }}
+              sx={{
+                position: "absolute",
+                top: 8,
+                ...(pageIndex % 2 === 1 ? { left: 8 } : { right: 8 }),
+                zIndex: 10,
+                bgcolor: "rgba(0,0,0,0.55)",
+                color: "white",
+                width: 28,
+                height: 28,
+                "&:hover": { bgcolor: "rgba(0,0,0,0.8)" },
+              }}
+            >
+              <CloseIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          )}
+        </Box>
+        <Typography
+          sx={{ fontSize: "0.85rem", color: "#aaa", fontWeight: 600, textAlign: "center", mt: 0.5 }}
+        >
+          {pageIndex === 0 ? "Cover" : pageIndex === totalPages - 1 ? "Back Cover" : pageIndex}
+        </Typography>
+      </Box>
+    );
+  };
 
   return (
     <Box sx={{ display: "flex", height: "100vh", pt: "64px" }}>
@@ -434,197 +621,8 @@ export default function EditPage() {
                   justifyContent: lp ? "flex-start" : "flex-end",
                 }}
               >
-                {/* Left page */}
-                {lp && (
-                  <Box>
-                    <Box
-                      sx={{
-                        position: "relative",
-                        boxShadow: "0px 12px 32px rgba(0, 0, 0, 0.3)",
-                        borderRadius: 0.5,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <Stage
-                        width={pageWidth}
-                        height={pageHeight}
-                        onClick={handleStageClick}
-                      >
-                        <Layer>
-                          <PageCanvas
-                            page={lp}
-                            pageWidth={pageWidth}
-                            pageHeight={pageHeight}
-                            isInteractive
-                            selectedSlotId={
-                              selectedPageId === lp.id ? selectedSlotId : null
-                            }
-                            selectedTextId={
-                              selectedPageId === lp.id ? selectedTextId : null
-                            }
-                            dragOverSlotId={
-                              dragOverInfo?.pageId === lp.id ? dragOverInfo.slotId : null
-                            }
-                            dragSourceSlotId={
-                              dragSourceInfo?.pageId === lp.id ? dragSourceInfo.slotId : null
-                            }
-                            onSlotClick={(slotId) =>
-                              handleSlotClick(lp.id, slotId)
-                            }
-                            onTextClick={(textId) =>
-                              handleTextClick(lp.id, textId)
-                            }
-                            onTextDblClick={(textId) =>
-                              handleTextDblClick(lp.id, textId)
-                            }
-                          />
-                        </Layer>
-                      </Stage>
-                      {/* Page-level drop zone (behind slot overlays) */}
-                      <div
-                        onDragOver={(e) => handlePageDragOver(e, lp.id)}
-                        onDrop={(e) => handlePageDrop(e, lp.id)}
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          zIndex: 1,
-                        }}
-                      />
-                      {/* Drag-and-drop overlay divs */}
-                      {lp.slots.map((slot) => {
-                        const isSelected = selectedPageId === lp.id && selectedSlotId === slot.id;
-                        return (
-                          <div
-                            key={slot.id}
-                            draggable={!!slot.photoId && !isSelected}
-                            onDragStart={(e) =>
-                              slot.photoId
-                                ? handleDragStart(e, lp.id, slot.id, slot.photoId)
-                                : e.preventDefault()
-                            }
-                            onDragOver={(e) => handleSlotDragOver(e, lp.id, slot.id)}
-                            onDrop={(e) => handleDrop(e, lp.id, slot.id)}
-                            onDragEnd={handleDragEnd}
-                            onClick={() => handleSlotClick(lp.id, slot.id)}
-                            style={{
-                              position: "absolute",
-                              left: (slot.x / 100) * pageWidth,
-                              top: (slot.y / 100) * pageHeight,
-                              width: (slot.width / 100) * pageWidth,
-                              height: (slot.height / 100) * pageHeight,
-                              cursor: slot.photoId
-                                ? isSelected ? "default" : "grab"
-                                : "default",
-                              pointerEvents: isSelected && !dragSourceInfo ? "none" : "auto",
-                              zIndex: 2,
-                            }}
-                          />
-                        );
-                      })}
-                    </Box>
-                    <Typography
-                      sx={{ fontSize: "0.85rem", color: "#aaa", fontWeight: 600, textAlign: "center", mt: 0.5 }}
-                    >
-                      {spread.left! === 0 ? "Cover" : spread.left! === totalPages - 1 ? "Back Cover" : spread.left!}
-                    </Typography>
-                  </Box>
-                )}
-
-                {/* Right page */}
-                {rp && (
-                  <Box>
-                    <Box
-                      sx={{
-                        position: "relative",
-                        boxShadow: "0px 12px 32px rgba(0, 0, 0, 0.3)",
-                        borderRadius: 0.5,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <Stage
-                        width={pageWidth}
-                        height={pageHeight}
-                        onClick={handleStageClick}
-                      >
-                        <Layer>
-                          <PageCanvas
-                            page={rp}
-                            pageWidth={pageWidth}
-                            pageHeight={pageHeight}
-                            isInteractive
-                            selectedSlotId={
-                              selectedPageId === rp.id ? selectedSlotId : null
-                            }
-                            selectedTextId={
-                              selectedPageId === rp.id ? selectedTextId : null
-                            }
-                            dragOverSlotId={
-                              dragOverInfo?.pageId === rp.id ? dragOverInfo.slotId : null
-                            }
-                            dragSourceSlotId={
-                              dragSourceInfo?.pageId === rp.id ? dragSourceInfo.slotId : null
-                            }
-                            onSlotClick={(slotId) =>
-                              handleSlotClick(rp.id, slotId)
-                            }
-                            onTextClick={(textId) =>
-                              handleTextClick(rp.id, textId)
-                            }
-                            onTextDblClick={(textId) =>
-                              handleTextDblClick(rp.id, textId)
-                            }
-                          />
-                        </Layer>
-                      </Stage>
-                      {/* Page-level drop zone (behind slot overlays) */}
-                      <div
-                        onDragOver={(e) => handlePageDragOver(e, rp.id)}
-                        onDrop={(e) => handlePageDrop(e, rp.id)}
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          zIndex: 1,
-                        }}
-                      />
-                      {/* Drag-and-drop overlay divs */}
-                      {rp.slots.map((slot) => {
-                        const isSelected = selectedPageId === rp.id && selectedSlotId === slot.id;
-                        return (
-                          <div
-                            key={slot.id}
-                            draggable={!!slot.photoId && !isSelected}
-                            onDragStart={(e) =>
-                              slot.photoId
-                                ? handleDragStart(e, rp.id, slot.id, slot.photoId)
-                                : e.preventDefault()
-                            }
-                            onDragOver={(e) => handleSlotDragOver(e, rp.id, slot.id)}
-                            onDrop={(e) => handleDrop(e, rp.id, slot.id)}
-                            onDragEnd={handleDragEnd}
-                            onClick={() => handleSlotClick(rp.id, slot.id)}
-                            style={{
-                              position: "absolute",
-                              left: (slot.x / 100) * pageWidth,
-                              top: (slot.y / 100) * pageHeight,
-                              width: (slot.width / 100) * pageWidth,
-                              height: (slot.height / 100) * pageHeight,
-                              cursor: slot.photoId
-                                ? isSelected ? "default" : "grab"
-                                : "default",
-                              pointerEvents: isSelected && !dragSourceInfo ? "none" : "auto",
-                              zIndex: 2,
-                            }}
-                          />
-                        );
-                      })}
-                    </Box>
-                    <Typography
-                      sx={{ fontSize: "0.85rem", color: "#aaa", fontWeight: 600, textAlign: "center", mt: 0.5 }}
-                    >
-                      {spread.right! === 0 ? "Cover" : spread.right! === totalPages - 1 ? "Back Cover" : spread.right!}
-                    </Typography>
-                  </Box>
-                )}
+                {lp && renderPageBlock(lp, spread.left!)}
+                {rp && renderPageBlock(rp, spread.right!)}
               </Box>
             );
           })}
