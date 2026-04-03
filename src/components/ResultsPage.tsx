@@ -129,7 +129,7 @@ export default function ResultsPage() {
             alignItems: "center",
             justifyContent: "center",
             px: 4,
-            py: 4,
+            py: 1,
             position: "relative",
           }}
         >
@@ -187,8 +187,8 @@ export default function ResultsPage() {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            gap: 3,
-            pb: 4,
+            gap: 1.5,
+            pb: 2,
           }}
         >
           {/* Page indicator */}

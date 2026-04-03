@@ -310,7 +310,7 @@ export default function PageCanvas({
           photoUrl={slot.photoId ? urls.get(slot.photoId) : undefined}
           isSelected={selectedSlotId === slot.id}
           isSwapSource={swapSourceSlotId === slot.id}
-          isSwapTarget={swapSourceSlotId !== null && swapSourceSlotId !== slot.id}
+          isSwapTarget={!!swapSourceSlotId && swapSourceSlotId !== slot.id}
           onClick={() => onSlotClick?.(slot.id)}
           isInteractive={isInteractive}
           pageId={page.id}
