@@ -37,6 +37,7 @@ export default function EditPage() {
   const [dragSourceInfo, setDragSourceInfo] = useState<{ pageId: string; slotId: string } | null>(null);
   const dragSourceRef = useRef<{ pageId: string; slotId: string } | null>(null);
   const [dragOverInfo, setDragOverInfo] = useState<{ pageId: string; slotId: string } | null>(null);
+  const dragOverRef = useRef<{ pageId: string; slotId: string } | null>(null);
   const [editingTextBlock, setEditingTextBlock] = useState<TextBlock | null>(
     null
   );
@@ -240,7 +241,7 @@ export default function EditPage() {
     autoScrollSpeed.current = 0;
   }, []);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
+  const handleContainerDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
 
@@ -264,24 +265,27 @@ export default function EditPage() {
     }
   }, [startAutoScroll]);
 
-  const handleDragEnter = useCallback(
+  const handleSlotDragOver = useCallback(
     (e: React.DragEvent, pageId: string, slotId: string) => {
       e.preventDefault();
-      setDragOverInfo({ pageId, slotId });
+      e.stopPropagation();
+      e.dataTransfer.dropEffect = "move";
+      // Only update state when the target actually changes
+      const cur = dragOverRef.current;
+      if (!cur || cur.pageId !== pageId || cur.slotId !== slotId) {
+        const info = { pageId, slotId };
+        dragOverRef.current = info;
+        setDragOverInfo(info);
+      }
     },
     []
   );
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      setDragOverInfo(null);
-    }
-  }, []);
 
   const handleDrop = useCallback(
     (e: React.DragEvent, toPageId: string, toSlotId: string) => {
       e.preventDefault();
       stopAutoScroll();
+      dragOverRef.current = null;
       setDragOverInfo(null);
       const source = dragSourceRef.current;
       if (source) {
@@ -299,6 +303,7 @@ export default function EditPage() {
   const handleDragEnd = useCallback(() => {
     stopAutoScroll();
     dragSourceRef.current = null;
+    dragOverRef.current = null;
     setDragSourceInfo(null);
     setDragOverInfo(null);
   }, [stopAutoScroll]);
@@ -352,7 +357,7 @@ export default function EditPage() {
       <Box
         ref={containerRef}
         onScroll={handleMainScroll}
-        onDragOver={handleDragOver}
+        onDragOver={handleContainerDragOver}
         onDragEnd={handleDragEnd}
         sx={{
           flex: 1,
@@ -447,9 +452,7 @@ export default function EditPage() {
                                 ? handleDragStart(e, lp.id, slot.id, slot.photoId)
                                 : e.preventDefault()
                             }
-                            onDragOver={handleDragOver}
-                            onDragEnter={(e) => handleDragEnter(e, lp.id, slot.id)}
-                            onDragLeave={handleDragLeave}
+                            onDragOver={(e) => handleSlotDragOver(e, lp.id, slot.id)}
                             onDrop={(e) => handleDrop(e, lp.id, slot.id)}
                             onDragEnd={handleDragEnd}
                             onClick={() => handleSlotClick(lp.id, slot.id)}
@@ -535,9 +538,7 @@ export default function EditPage() {
                                 ? handleDragStart(e, rp.id, slot.id, slot.photoId)
                                 : e.preventDefault()
                             }
-                            onDragOver={handleDragOver}
-                            onDragEnter={(e) => handleDragEnter(e, rp.id, slot.id)}
-                            onDragLeave={handleDragLeave}
+                            onDragOver={(e) => handleSlotDragOver(e, rp.id, slot.id)}
                             onDrop={(e) => handleDrop(e, rp.id, slot.id)}
                             onDragEnd={handleDragEnd}
                             onClick={() => handleSlotClick(rp.id, slot.id)}
