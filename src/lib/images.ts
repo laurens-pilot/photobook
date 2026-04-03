@@ -43,13 +43,15 @@ export async function createThumbnail(
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d")!;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
   ctx.drawImage(img, 0, 0, w, h);
 
   return new Promise((resolve) => {
     canvas.toBlob(
       (blob) => resolve(blob!),
       "image/jpeg",
-      0.7
+      0.85
     );
   });
 }

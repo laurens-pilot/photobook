@@ -196,7 +196,6 @@ function PageElement({
             page={page}
             pageWidth={pageWidth}
             pageHeight={pageHeight}
-            useFullRes
           />
         </Layer>
       </Stage>
