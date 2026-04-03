@@ -1,0 +1,38 @@
+{
+  "name": "ente-photobook",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@emotion/cache": "^11.14.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "^7.0.2",
+    "@mui/material": "^7.0.2",
+    "@mui/material-nextjs": "^7.0.2",
+    "exifr": "^7.1.3",
+    "heic2any": "^0.0.4",
+    "jspdf": "^2.5.2",
+    "jszip": "^3.10.1",
+    "konva": "^9.3.18",
+    "localforage": "^1.10.0",
+    "next": "^15.3.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-konva": "^19.0.3",
+    "page-flip": "^2.0.7",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.1",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.2",
+    "@types/uuid": "^10.0.0",
+    "typescript": "^5.8.3"
+  }
+}
