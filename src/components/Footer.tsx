@@ -1,8 +1,12 @@
 "use client";
 
-import { Box, Typography, Link } from "@mui/material";
+import { useState } from "react";
+import { Box, Typography, Link, Dialog, DialogTitle, DialogContent, IconButton } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 
-export default function Footer() {
+export default function Footer({ showPrivacyPolicy = false }: { showPrivacyPolicy?: boolean }) {
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+
   return (
     <Box
       component="footer"
@@ -16,32 +20,24 @@ export default function Footer() {
         gap: 1.5,
       }}
     >
-      <Box sx={{ display: "flex", gap: 4 }}>
+      {showPrivacyPolicy && (
         <Link
-          href="#"
+          component="button"
           underline="hover"
+          onClick={() => setPrivacyOpen(true)}
           sx={{
             fontFamily: "'Noto Serif', serif",
             fontStyle: "italic",
             fontSize: "0.85rem",
             color: "#999",
+            border: "none",
+            background: "none",
+            cursor: "pointer",
           }}
         >
           Privacy Policy
         </Link>
-        <Link
-          href="#"
-          underline="hover"
-          sx={{
-            fontFamily: "'Noto Serif', serif",
-            fontStyle: "italic",
-            fontSize: "0.85rem",
-            color: "#999",
-          }}
-        >
-          Help Center
-        </Link>
-      </Box>
+      )}
       <Typography
         sx={{
           fontFamily: "'Noto Serif', serif",
@@ -50,8 +46,28 @@ export default function Footer() {
           color: "#aaa",
         }}
       >
-        &copy; 2024 Ente Photobook. Handcrafted for your memories.
+        &copy; 2026 Ente Photobook. Handcrafted for your memories.
       </Typography>
+
+      <Dialog open={privacyOpen} onClose={() => setPrivacyOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          Privacy Policy
+          <IconButton onClick={() => setPrivacyOpen(false)} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 2 }}>
+            Ente Photobook runs entirely in your browser. Your photos are never uploaded to any server.
+          </Typography>
+          <Typography sx={{ mb: 2 }}>
+            All processing — layout, editing, and export — happens locally on your device. We do not collect, store, or have access to any of your photos or personal data.
+          </Typography>
+          <Typography>
+            No accounts, no tracking, no cookies. Your memories stay yours.
+          </Typography>
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

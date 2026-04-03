@@ -20,7 +20,6 @@ import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import FolderZipIcon from "@mui/icons-material/FolderZip";
 import { useBook } from "@/context/BookContext";
 import BookViewer, { type BookViewerHandle } from "./BookViewer";
-import Footer from "./Footer";
 import {
   exportPdfA5,
   exportPdfA4Spreads,
@@ -316,7 +315,6 @@ export default function ResultsPage() {
         </Box>
       </Box>
 
-      <Footer />
     </Box>
   );
 }

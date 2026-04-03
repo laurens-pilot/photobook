@@ -452,7 +452,7 @@ export default function StartPage() {
         ))}
       </Box>
 
-      <Footer />
+      <Footer showPrivacyPolicy />
     </Box>
   );
 }

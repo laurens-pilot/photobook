@@ -10,7 +10,6 @@ import Toolbar from "./Toolbar";
 import TextEditDialog from "./TextEditDialog";
 import PhotoPool from "./PhotoPool";
 import CaptionEditor from "./CaptionEditor";
-import Footer from "./Footer";
 import type { TextBlock } from "@/lib/types";
 
 // A5 aspect ratio
@@ -564,7 +563,6 @@ export default function EditPage() {
           })}
         </Box>
 
-        <Footer />
       </Box>
 
       {/* Right Sidebar - Page Strip */}
