@@ -1,0 +1,179 @@
+import { useState, useRef, useCallback } from "react";
+import { useBook } from "@/context/BookContext";
+import type { useAutoScroll } from "./useAutoScroll";
+
+export interface DragInfo {
+  pageId: string;
+  slotId: string;
+}
+
+export function usePhotoDrag(
+  containerRef: React.RefObject<HTMLElement | null>,
+  autoScroll: ReturnType<typeof useAutoScroll>
+) {
+  const { thumbnailUrls, swapPhotos, movePhotoToPage, book } = useBook();
+  const pages = book.pages;
+
+  const [dragSourceInfo, setDragSourceInfo] = useState<DragInfo | null>(null);
+  const dragSourceRef = useRef<DragInfo | null>(null);
+  const [dragOverInfo, setDragOverInfo] = useState<DragInfo | null>(null);
+  const dragOverRef = useRef<DragInfo | null>(null);
+  const dragGhostRef = useRef<HTMLCanvasElement>(null);
+
+  const handleDragStart = useCallback(
+    (e: React.DragEvent, pageId: string, slotId: string, photoId: string) => {
+      const source = { pageId, slotId };
+      dragSourceRef.current = source;
+      setDragSourceInfo(source);
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", JSON.stringify({ pageId, slotId }));
+      // Create a small drag ghost from the thumbnail
+      const thumbUrl = thumbnailUrls.get(photoId);
+      if (thumbUrl && dragGhostRef.current) {
+        const canvas = dragGhostRef.current;
+        const ctx = canvas.getContext("2d");
+        const img = new window.Image();
+        img.src = thumbUrl;
+        const size = 200;
+        canvas.width = size;
+        canvas.height = size;
+        if (ctx) {
+          const aspect = img.naturalWidth / img.naturalHeight || 1;
+          const dw = aspect >= 1 ? size : size * aspect;
+          const dh = aspect >= 1 ? size / aspect : size;
+          ctx.clearRect(0, 0, size, size);
+          ctx.drawImage(img, (size - dw) / 2, (size - dh) / 2, dw, dh);
+        }
+        e.dataTransfer.setDragImage(canvas, size / 2, size / 2);
+      }
+    },
+    [thumbnailUrls]
+  );
+
+  const handleSlotDragOver = useCallback(
+    (e: React.DragEvent, pageId: string, slotId: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.dataTransfer.dropEffect = "move";
+      // Only update state when the target actually changes
+      const cur = dragOverRef.current;
+      if (!cur || cur.pageId !== pageId || cur.slotId !== slotId) {
+        const info = { pageId, slotId };
+        dragOverRef.current = info;
+        setDragOverInfo(info);
+      }
+    },
+    []
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent, toPageId: string, toSlotId: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+      autoScroll.stop();
+      dragOverRef.current = null;
+      setDragOverInfo(null);
+      const source = dragSourceRef.current;
+      if (source) {
+        const { pageId: fromPageId, slotId: fromSlotId } = source;
+        if (fromPageId !== toPageId || fromSlotId !== toSlotId) {
+          swapPhotos(fromPageId, fromSlotId, toPageId, toSlotId);
+        }
+        dragSourceRef.current = null;
+        setDragSourceInfo(null);
+      }
+    },
+    [swapPhotos, autoScroll]
+  );
+
+  const handlePageDragOver = useCallback(
+    (e: React.DragEvent, _pageId: string) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      // Clear slot-level highlight when hovering page background
+      const cur = dragOverRef.current;
+      if (cur !== null) {
+        dragOverRef.current = null;
+        setDragOverInfo(null);
+      }
+    },
+    []
+  );
+
+  const handlePageDrop = useCallback(
+    (e: React.DragEvent, toPageId: string) => {
+      e.preventDefault();
+      autoScroll.stop();
+      dragOverRef.current = null;
+      setDragOverInfo(null);
+      const source = dragSourceRef.current;
+      if (source) {
+        const { pageId: fromPageId, slotId: fromSlotId } = source;
+        if (fromPageId !== toPageId) {
+          // Cross-page drop on empty area: move photo to target page
+          const toPage = pages.find((p) => p.id === toPageId);
+          const filledSlots =
+            toPage?.slots.filter((s) => s.photoId !== null).length ?? 0;
+          if (filledSlots < 4) {
+            movePhotoToPage(fromPageId, fromSlotId, toPageId);
+          }
+        }
+        dragSourceRef.current = null;
+        setDragSourceInfo(null);
+      }
+    },
+    [pages, movePhotoToPage, autoScroll]
+  );
+
+  const handleDragEnd = useCallback(() => {
+    autoScroll.stop();
+    dragSourceRef.current = null;
+    dragOverRef.current = null;
+    setDragSourceInfo(null);
+    setDragOverInfo(null);
+  }, [autoScroll]);
+
+  const handleContainerDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+
+      // Auto-scroll when dragging near top/bottom edges
+      const el = containerRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const edgeZone = 120;
+      const maxSpeed = 30;
+      const distFromTop = e.clientY - rect.top;
+      const distFromBottom = rect.bottom - e.clientY;
+
+      if (distFromTop < edgeZone) {
+        autoScroll.speed.current = -Math.round(
+          maxSpeed * (1 - distFromTop / edgeZone)
+        );
+        autoScroll.start();
+      } else if (distFromBottom < edgeZone) {
+        autoScroll.speed.current = Math.round(
+          maxSpeed * (1 - distFromBottom / edgeZone)
+        );
+        autoScroll.start();
+      } else {
+        autoScroll.speed.current = 0;
+      }
+    },
+    [containerRef, autoScroll]
+  );
+
+  return {
+    dragSourceInfo,
+    dragOverInfo,
+    handleDragStart,
+    handleSlotDragOver,
+    handleDrop,
+    handlePageDragOver,
+    handlePageDrop,
+    handleDragEnd,
+    handleContainerDragOver,
+    dragGhostRef,
+  };
+}

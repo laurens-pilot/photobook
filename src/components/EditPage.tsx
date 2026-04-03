@@ -1,24 +1,24 @@
 "use client";
 
 import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import { Box, IconButton, Typography } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
-import { Stage, Layer } from "react-konva";
+import { Box } from "@mui/material";
 import { useBook } from "@/context/BookContext";
-import PageCanvas from "./PageCanvas";
 import PageStrip from "./PageStrip";
 import Toolbar from "./Toolbar";
-import LayoutPicker from "./LayoutPicker";
+import SpreadPage, { PICKER_WIDTH } from "./SpreadPage";
 import TextEditDialog from "./TextEditDialog";
 import PhotoPool from "./PhotoPool";
 import CaptionEditor from "./CaptionEditor";
+import { useAutoScroll } from "@/hooks/useAutoScroll";
+import { usePhotoDrag } from "@/hooks/usePhotoDrag";
+import { usePageDrag } from "@/hooks/usePageDrag";
 import type { TextBlock } from "@/lib/types";
 
 // A5 aspect ratio
 const PAGE_ASPECT = 148 / 210;
+const PAGE_GAP = 2;
 
 export default function EditPage() {
-  const bookCtx = useBook();
   const {
     book,
     currentSpreadIndex,
@@ -27,49 +27,39 @@ export default function EditPage() {
     updatePage,
     updateTextBlock,
     removeTextBlock,
-    swapPhotos,
-    movePhotoToPage,
-    updateSlot,
     addTextBlock,
-    removePage,
-    reorderPages,
-    setPageLayout,
-    thumbnailUrls,
-  } = bookCtx;
+  } = useBook();
 
+  // Selection state
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
   const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
-  const [dragSourceInfo, setDragSourceInfo] = useState<{ pageId: string; slotId: string } | null>(null);
-  const dragSourceRef = useRef<{ pageId: string; slotId: string } | null>(null);
-  const [dragOverInfo, setDragOverInfo] = useState<{ pageId: string; slotId: string } | null>(null);
-  const dragOverRef = useRef<{ pageId: string; slotId: string } | null>(null);
-  const [editingTextBlock, setEditingTextBlock] = useState<TextBlock | null>(
-    null
-  );
-  const [editingTextPageId, setEditingTextPageId] = useState<string | null>(
-    null
-  );
+
+  // Text editing state
+  const [editingTextBlock, setEditingTextBlock] = useState<TextBlock | null>(null);
+  const [editingTextPageId, setEditingTextPageId] = useState<string | null>(null);
+
+  // Hover & UI state
   const [hoveredPageId, setHoveredPageId] = useState<string | null>(null);
-  const [pageDragSource, setPageDragSource] = useState<number | null>(null);
-  const [pageDragTarget, setPageDragTarget] = useState<number | null>(null);
-  const pageDragSourceRef = useRef<number | null>(null);
   const [photoPoolOpen, setPhotoPoolOpen] = useState(false);
   const [captionAnchor, setCaptionAnchor] = useState<HTMLElement | null>(null);
   const [captionPageId, setCaptionPageId] = useState<string | null>(null);
+
+  // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const sidebarScrollRef = useRef<HTMLDivElement>(null);
-  const dragGhostRef = useRef<HTMLCanvasElement>(null);
 
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   const pages = book.pages;
-  const leftPage = pages[currentSpreadIndex]; // for toolbar context
+  const leftPage = pages[currentSpreadIndex];
   const totalPages = pages.length;
 
-  const PAGE_GAP = 2;
-  const PICKER_WIDTH = 60; // space reserved for layout picker on each side
+  // Drag hooks
+  const autoScroll = useAutoScroll(containerRef);
+  const photoDrag = usePhotoDrag(containerRef, autoScroll);
+  const pageDrag = usePageDrag();
 
   // Group pages into spread rows: cover alone on right, interior paired, back cover alone on left
   const spreads = useMemo(() => {
@@ -93,11 +83,6 @@ export default function EditPage() {
 
     return result;
   }, [pages.length]);
-
-  // Clean up auto-scroll on unmount
-  useEffect(() => () => {
-    if (autoScrollRef.current !== null) cancelAnimationFrame(autoScrollRef.current);
-  }, []);
 
   // Observe container size for responsive layout
   useEffect(() => {
@@ -159,6 +144,7 @@ export default function EditPage() {
     }
   }, []);
 
+  // Selection handlers
   const handleSlotClick = useCallback(
     (pageId: string, slotId: string) => {
       setSelectedSlotId(slotId);
@@ -197,210 +183,11 @@ export default function EditPage() {
     }
   }, []);
 
-  // --- Drag-and-drop handlers for photo reordering ---
-  const handleDragStart = useCallback(
-    (e: React.DragEvent, pageId: string, slotId: string, photoId: string) => {
-      const source = { pageId, slotId };
-      dragSourceRef.current = source;
-      setDragSourceInfo(source);
-      e.dataTransfer.effectAllowed = "move";
-      e.dataTransfer.setData("text/plain", JSON.stringify({ pageId, slotId }));
-      // Create a small drag ghost from the thumbnail
-      const thumbUrl = thumbnailUrls.get(photoId);
-      if (thumbUrl && dragGhostRef.current) {
-        const canvas = dragGhostRef.current;
-        const ctx = canvas.getContext("2d");
-        const img = new window.Image();
-        img.src = thumbUrl;
-        const size = 200;
-        canvas.width = size;
-        canvas.height = size;
-        if (ctx) {
-          const aspect = img.naturalWidth / img.naturalHeight || 1;
-          const dw = aspect >= 1 ? size : size * aspect;
-          const dh = aspect >= 1 ? size / aspect : size;
-          ctx.clearRect(0, 0, size, size);
-          ctx.drawImage(img, (size - dw) / 2, (size - dh) / 2, dw, dh);
-        }
-        e.dataTransfer.setDragImage(canvas, size / 2, size / 2);
-      }
-    },
-    [thumbnailUrls]
-  );
-
-  // Auto-scroll during drag when cursor is near top/bottom edge
-  const autoScrollRef = useRef<number | null>(null);
-  const autoScrollSpeed = useRef(0);
-
-  const startAutoScroll = useCallback(() => {
-    if (autoScrollRef.current !== null) return;
-    const tick = () => {
-      const el = containerRef.current;
-      if (el && autoScrollSpeed.current !== 0) {
-        el.scrollTop += autoScrollSpeed.current;
-      }
-      autoScrollRef.current = requestAnimationFrame(tick);
-    };
-    autoScrollRef.current = requestAnimationFrame(tick);
-  }, []);
-
-  const stopAutoScroll = useCallback(() => {
-    if (autoScrollRef.current !== null) {
-      cancelAnimationFrame(autoScrollRef.current);
-      autoScrollRef.current = null;
-    }
-    autoScrollSpeed.current = 0;
-  }, []);
-
-  const handleContainerDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-
-    // Auto-scroll when dragging near top/bottom edges
-    const el = containerRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const edgeZone = 120;
-    const maxSpeed = 30;
-    const distFromTop = e.clientY - rect.top;
-    const distFromBottom = rect.bottom - e.clientY;
-
-    if (distFromTop < edgeZone) {
-      autoScrollSpeed.current = -Math.round(maxSpeed * (1 - distFromTop / edgeZone));
-      startAutoScroll();
-    } else if (distFromBottom < edgeZone) {
-      autoScrollSpeed.current = Math.round(maxSpeed * (1 - distFromBottom / edgeZone));
-      startAutoScroll();
-    } else {
-      autoScrollSpeed.current = 0;
-    }
-  }, [startAutoScroll]);
-
-  const handleSlotDragOver = useCallback(
-    (e: React.DragEvent, pageId: string, slotId: string) => {
-      e.preventDefault();
-      e.stopPropagation();
-      e.dataTransfer.dropEffect = "move";
-      // Only update state when the target actually changes
-      const cur = dragOverRef.current;
-      if (!cur || cur.pageId !== pageId || cur.slotId !== slotId) {
-        const info = { pageId, slotId };
-        dragOverRef.current = info;
-        setDragOverInfo(info);
-      }
-    },
-    []
-  );
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent, toPageId: string, toSlotId: string) => {
-      e.preventDefault();
-      e.stopPropagation();
-      stopAutoScroll();
-      dragOverRef.current = null;
-      setDragOverInfo(null);
-      const source = dragSourceRef.current;
-      if (source) {
-        const { pageId: fromPageId, slotId: fromSlotId } = source;
-        if (fromPageId !== toPageId || fromSlotId !== toSlotId) {
-          swapPhotos(fromPageId, fromSlotId, toPageId, toSlotId);
-        }
-        dragSourceRef.current = null;
-        setDragSourceInfo(null);
-      }
-    },
-    [swapPhotos, stopAutoScroll]
-  );
-
-  const handlePageDragOver = useCallback(
-    (e: React.DragEvent, pageId: string) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-      // Clear slot-level highlight when hovering page background
-      const cur = dragOverRef.current;
-      if (cur !== null) {
-        dragOverRef.current = null;
-        setDragOverInfo(null);
-      }
-    },
-    []
-  );
-
-  const handlePageDrop = useCallback(
-    (e: React.DragEvent, toPageId: string) => {
-      e.preventDefault();
-      stopAutoScroll();
-      dragOverRef.current = null;
-      setDragOverInfo(null);
-      const source = dragSourceRef.current;
-      if (source) {
-        const { pageId: fromPageId, slotId: fromSlotId } = source;
-        if (fromPageId !== toPageId) {
-          // Cross-page drop on empty area: move photo to target page
-          const toPage = pages.find((p) => p.id === toPageId);
-          const filledSlots = toPage?.slots.filter((s) => s.photoId !== null).length ?? 0;
-          if (filledSlots < 4) {
-            movePhotoToPage(fromPageId, fromSlotId, toPageId);
-          }
-        }
-        dragSourceRef.current = null;
-        setDragSourceInfo(null);
-      }
-    },
-    [pages, movePhotoToPage, stopAutoScroll]
-  );
-
-  const handleDragEnd = useCallback(() => {
-    stopAutoScroll();
-    dragSourceRef.current = null;
-    dragOverRef.current = null;
-    setDragSourceInfo(null);
-    setDragOverInfo(null);
-  }, [stopAutoScroll]);
-
-  // --- Page drag-and-drop handlers for reordering ---
-  const handlePageDragStart = useCallback((e: React.DragEvent, pageIndex: number) => {
-    if (pageIndex === 0 || pageIndex === pages.length - 1) {
-      e.preventDefault();
-      return;
-    }
-    pageDragSourceRef.current = pageIndex;
-    setPageDragSource(pageIndex);
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("application/x-page-drag", String(pageIndex));
-  }, [pages.length]);
-
-  const handlePageDragOverPage = useCallback((e: React.DragEvent, pageIndex: number) => {
-    if (pageDragSourceRef.current === null) return;
-    if (pageIndex === 0 || pageIndex === pages.length - 1) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    setPageDragTarget(pageIndex);
-  }, [pages.length]);
-
-  const handlePageDropOnPage = useCallback((e: React.DragEvent, pageIndex: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const source = pageDragSourceRef.current;
-    if (source !== null && source !== pageIndex && pageIndex > 0 && pageIndex < pages.length - 1) {
-      reorderPages(source, pageIndex);
-    }
-    pageDragSourceRef.current = null;
-    setPageDragSource(null);
-    setPageDragTarget(null);
-  }, [reorderPages, pages.length]);
-
-  const handlePageDragEndCleanup = useCallback(() => {
-    pageDragSourceRef.current = null;
-    setPageDragSource(null);
-    setPageDragTarget(null);
-  }, []);
-
+  // Toolbar actions
   const handleAddText = useCallback(() => {
     const pageId = selectedPageId || leftPage?.id;
     if (!pageId) return;
     const block = addTextBlock(pageId);
-    // Immediately open the edit dialog for the new block
     setEditingTextBlock(block);
     setEditingTextPageId(pageId);
     setSelectedTextId(block.id);
@@ -421,199 +208,6 @@ export default function EditPage() {
     [addPhotos]
   );
 
-  const renderPageBlock = (page: typeof pages[number], pageIndex: number, pickerSide: "left" | "right") => {
-    const isInterior = pageIndex > 0 && pageIndex < totalPages - 1;
-    const isHovered = hoveredPageId === page.id;
-    const isDragTarget = pageDragTarget === pageIndex && pageDragSource !== null;
-    const isDragSource = pageDragSource === pageIndex;
-    const photoCount = page.slots.filter((s) => s.photoId !== null).length;
-    const hasSelectedSlotOnPage = selectedPageId === page.id && selectedSlotId !== null;
-
-    const pageBlock = (
-      <Box>
-        <Box
-          sx={{
-            position: "relative",
-            boxShadow: isDragTarget
-              ? "0 0 0 3px #08C225, 0px 12px 32px rgba(0, 0, 0, 0.3)"
-              : "0px 12px 32px rgba(0, 0, 0, 0.3)",
-            borderRadius: 0.5,
-            overflow: "hidden",
-            opacity: isDragSource ? 0.4 : 1,
-            transition: "box-shadow 0.15s, opacity 0.15s",
-          }}
-        >
-          <Stage
-            width={pageWidth}
-            height={pageHeight}
-            onClick={handleStageClick}
-          >
-            <Layer>
-              <PageCanvas
-                page={page}
-                pageWidth={pageWidth}
-                pageHeight={pageHeight}
-                isInteractive
-                selectedSlotId={selectedPageId === page.id ? selectedSlotId : null}
-                selectedTextId={selectedPageId === page.id ? selectedTextId : null}
-                dragOverSlotId={dragOverInfo?.pageId === page.id ? dragOverInfo.slotId : null}
-                dragSourceSlotId={dragSourceInfo?.pageId === page.id ? dragSourceInfo.slotId : null}
-                onSlotClick={(slotId) => handleSlotClick(page.id, slotId)}
-                onTextClick={(textId) => handleTextClick(page.id, textId)}
-                onTextDblClick={(textId) => handleTextDblClick(page.id, textId)}
-              />
-            </Layer>
-          </Stage>
-          {/* Page-level drop zone / page drag handle */}
-          <div
-            draggable={isInterior}
-            onDragStart={(e) => {
-              if (!isInterior) { e.preventDefault(); return; }
-              handlePageDragStart(e, pageIndex);
-            }}
-            onDragOver={(e) => {
-              if (pageDragSourceRef.current !== null) {
-                handlePageDragOverPage(e, pageIndex);
-              } else {
-                handlePageDragOver(e, page.id);
-              }
-            }}
-            onDrop={(e) => {
-              if (pageDragSourceRef.current !== null) {
-                handlePageDropOnPage(e, pageIndex);
-              } else {
-                handlePageDrop(e, page.id);
-              }
-            }}
-            onDragEnd={() => {
-              handlePageDragEndCleanup();
-              handleDragEnd();
-            }}
-            style={{
-              position: "absolute",
-              inset: 0,
-              zIndex: 1,
-              cursor: isInterior ? "grab" : "default",
-              pointerEvents: hasSelectedSlotOnPage && pageDragSource === null ? "none" : "auto",
-            }}
-          />
-          {/* Drag-and-drop overlay divs for photo slots */}
-          {page.slots.map((slot) => {
-            const isSelected = selectedPageId === page.id && selectedSlotId === slot.id;
-            return (
-              <div
-                key={slot.id}
-                draggable={!!slot.photoId && !isSelected}
-                onDragStart={(e) => {
-                  if (slot.photoId) {
-                    e.stopPropagation();
-                    handleDragStart(e, page.id, slot.id, slot.photoId);
-                  } else {
-                    e.preventDefault();
-                  }
-                }}
-                onDragOver={(e) => handleSlotDragOver(e, page.id, slot.id)}
-                onDrop={(e) => handleDrop(e, page.id, slot.id)}
-                onDragEnd={handleDragEnd}
-                onClick={() => handleSlotClick(page.id, slot.id)}
-                style={{
-                  position: "absolute",
-                  left: (slot.x / 100) * pageWidth,
-                  top: (slot.y / 100) * pageHeight,
-                  width: (slot.width / 100) * pageWidth,
-                  height: (slot.height / 100) * pageHeight,
-                  cursor: slot.photoId
-                    ? isSelected ? "default" : "grab"
-                    : "default",
-                  pointerEvents: (isSelected && !dragSourceInfo) || pageDragSource !== null
-                    ? "none" : "auto",
-                  zIndex: 2,
-                }}
-              />
-            );
-          })}
-          {/* Delete button on hover */}
-          {totalPages > 2 && isInterior && (
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                removePage(page.id);
-                setHoveredPageId(null);
-              }}
-              sx={{
-                position: "absolute",
-                top: 6,
-                ...(pageIndex % 2 === 1 ? { left: 6 } : { right: 6 }),
-                zIndex: 10,
-                bgcolor: "rgba(0,0,0,0.35)",
-                color: "rgba(255,255,255,0.8)",
-                width: 24,
-                height: 24,
-                opacity: isHovered ? 1 : 0,
-                transition: "opacity 0.2s, background-color 0.2s",
-                pointerEvents: isHovered ? "auto" : "none",
-                "&:hover": { bgcolor: "rgba(0,0,0,0.6)", color: "white" },
-              }}
-            >
-              <CloseIcon sx={{ fontSize: 14 }} />
-            </IconButton>
-          )}
-        </Box>
-        <Typography
-          sx={{ fontSize: "0.85rem", color: "#aaa", fontWeight: 600, textAlign: "center", mt: 0.5 }}
-        >
-          {pageIndex === 0 ? "Cover" : pageIndex === totalPages - 1 ? "Back Cover" : pageIndex}
-        </Typography>
-      </Box>
-    );
-
-    const slotThumbnails = page.slots
-      .filter((s) => s.photoId !== null)
-      .map((s) => thumbnailUrls.get(s.photoId!) ?? "");
-
-    const pickerContainer = (
-      <Box
-        sx={{
-          width: PICKER_WIDTH,
-          flexShrink: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: pickerSide === "left" ? "flex-end" : "flex-start",
-          opacity: isHovered && photoCount > 0 ? 1 : 0,
-          transition: "opacity 0.2s",
-          pointerEvents: isHovered && photoCount > 0 ? "auto" : "none",
-        }}
-      >
-        {photoCount > 0 && (
-          <LayoutPicker
-            photoCount={photoCount}
-            currentVariant={page.layoutVariant}
-            thumbnailUrls={slotThumbnails}
-            onSelect={(key) => setPageLayout(page.id, key)}
-            side={pickerSide}
-          />
-        )}
-      </Box>
-    );
-
-    return (
-      <Box
-        onMouseEnter={() => setHoveredPageId(page.id)}
-        onMouseLeave={() => setHoveredPageId(null)}
-        sx={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "start",
-        }}
-      >
-        {pickerSide === "left" && pickerContainer}
-        {pageBlock}
-        {pickerSide === "right" && pickerContainer}
-      </Box>
-    );
-  };
-
   return (
     <Box sx={{ display: "flex", height: "100vh", pt: "64px" }}>
       {/* Left Toolbar */}
@@ -622,7 +216,6 @@ export default function EditPage() {
         onTogglePhotoPool={() => setPhotoPoolOpen((v) => !v)}
         onAddText={handleAddText}
         onEditCaptions={(anchor) => {
-          // Edit captions for the left page of current spread (or selected page)
           const pageId = selectedPageId || leftPage?.id;
           if (pageId) {
             setCaptionPageId(pageId);
@@ -638,8 +231,8 @@ export default function EditPage() {
       <Box
         ref={containerRef}
         onScroll={handleMainScroll}
-        onDragOver={handleContainerDragOver}
-        onDragEnd={handleDragEnd}
+        onDragOver={photoDrag.handleContainerDragOver}
+        onDragEnd={photoDrag.handleDragEnd}
         sx={{
           flex: 1,
           display: "flex",
@@ -675,13 +268,78 @@ export default function EditPage() {
                   justifyContent: lp ? "flex-start" : "flex-end",
                 }}
               >
-                {lp && renderPageBlock(lp, spread.left!, "left")}
-                {rp && renderPageBlock(rp, spread.right!, "right")}
+                {lp && (
+                  <SpreadPage
+                    page={lp}
+                    pageIndex={spread.left!}
+                    pickerSide="left"
+                    pageWidth={pageWidth}
+                    pageHeight={pageHeight}
+                    totalPages={totalPages}
+                    selectedSlotId={selectedSlotId}
+                    selectedPageId={selectedPageId}
+                    selectedTextId={selectedTextId}
+                    onSlotClick={handleSlotClick}
+                    onTextClick={handleTextClick}
+                    onTextDblClick={handleTextDblClick}
+                    onStageClick={handleStageClick}
+                    isHovered={hoveredPageId === lp.id}
+                    onHoverChange={setHoveredPageId}
+                    dragSourceInfo={photoDrag.dragSourceInfo}
+                    dragOverInfo={photoDrag.dragOverInfo}
+                    onPhotoDragStart={photoDrag.handleDragStart}
+                    onSlotDragOver={photoDrag.handleSlotDragOver}
+                    onPhotoDrop={photoDrag.handleDrop}
+                    onPhotoDragEnd={photoDrag.handleDragEnd}
+                    onPageDragOver={photoDrag.handlePageDragOver}
+                    onPageDrop={photoDrag.handlePageDrop}
+                    pageDragSource={pageDrag.pageDragSource}
+                    pageDragTarget={pageDrag.pageDragTarget}
+                    pageDragSourceRef={pageDrag.pageDragSourceRef}
+                    onPageDragStart={pageDrag.handlePageDragStart}
+                    onPageDragOverPage={pageDrag.handlePageDragOverPage}
+                    onPageDropOnPage={pageDrag.handlePageDropOnPage}
+                    onPageDragEndCleanup={pageDrag.handlePageDragEndCleanup}
+                  />
+                )}
+                {rp && (
+                  <SpreadPage
+                    page={rp}
+                    pageIndex={spread.right!}
+                    pickerSide="right"
+                    pageWidth={pageWidth}
+                    pageHeight={pageHeight}
+                    totalPages={totalPages}
+                    selectedSlotId={selectedSlotId}
+                    selectedPageId={selectedPageId}
+                    selectedTextId={selectedTextId}
+                    onSlotClick={handleSlotClick}
+                    onTextClick={handleTextClick}
+                    onTextDblClick={handleTextDblClick}
+                    onStageClick={handleStageClick}
+                    isHovered={hoveredPageId === rp.id}
+                    onHoverChange={setHoveredPageId}
+                    dragSourceInfo={photoDrag.dragSourceInfo}
+                    dragOverInfo={photoDrag.dragOverInfo}
+                    onPhotoDragStart={photoDrag.handleDragStart}
+                    onSlotDragOver={photoDrag.handleSlotDragOver}
+                    onPhotoDrop={photoDrag.handleDrop}
+                    onPhotoDragEnd={photoDrag.handleDragEnd}
+                    onPageDragOver={photoDrag.handlePageDragOver}
+                    onPageDrop={photoDrag.handlePageDrop}
+                    pageDragSource={pageDrag.pageDragSource}
+                    pageDragTarget={pageDrag.pageDragTarget}
+                    pageDragSourceRef={pageDrag.pageDragSourceRef}
+                    onPageDragStart={pageDrag.handlePageDragStart}
+                    onPageDragOverPage={pageDrag.handlePageDragOverPage}
+                    onPageDropOnPage={pageDrag.handlePageDropOnPage}
+                    onPageDragEndCleanup={pageDrag.handlePageDragEndCleanup}
+                  />
+                )}
               </Box>
             );
           })}
         </Box>
-
       </Box>
 
       {/* Right Sidebar - Page Strip */}
@@ -691,7 +349,7 @@ export default function EditPage() {
       />
 
       {/* Offscreen canvas for drag ghost */}
-      <canvas ref={dragGhostRef} style={{ position: "fixed", left: -9999 }} />
+      <canvas ref={photoDrag.dragGhostRef} style={{ position: "fixed", left: -9999 }} />
 
       {/* Hidden file input */}
       <input
