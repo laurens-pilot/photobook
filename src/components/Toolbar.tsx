@@ -17,6 +17,7 @@ interface ToolbarProps {
   onAddPhotos: () => void;
   onTogglePhotoPool: () => void;
   onEditCaptions: (anchor: HTMLElement) => void;
+  onAddText: () => void;
   selectedSlotId: string | null;
   selectedPageId: string | null;
   selectedTextId: string | null;
@@ -29,6 +30,7 @@ export default function Toolbar({
   onAddPhotos,
   onTogglePhotoPool,
   onEditCaptions,
+  onAddText,
   selectedSlotId,
   selectedPageId,
   selectedTextId,
@@ -39,7 +41,6 @@ export default function Toolbar({
   const {
     addPage,
     removePage,
-    addTextBlock,
     removeTextBlock,
     updateSlot,
     currentSpreadIndex,
@@ -51,10 +52,7 @@ export default function Toolbar({
   };
 
   const handleAddText = () => {
-    const leftPage = book.pages[currentSpreadIndex];
-    if (leftPage) {
-      addTextBlock(leftPage.id);
-    }
+    onAddText();
   };
 
   const handleDeleteSelected = () => {

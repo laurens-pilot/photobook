@@ -71,7 +71,7 @@ interface BookContextValue {
     toPageId: string,
     toSlotId: string
   ) => void;
-  addTextBlock: (pageId: string) => void;
+  addTextBlock: (pageId: string) => TextBlock;
   updateTextBlock: (
     pageId: string,
     blockId: string,
@@ -350,10 +350,10 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
-  const addTextBlock = useCallback((pageId: string) => {
+  const addTextBlock = useCallback((pageId: string): TextBlock => {
     const block: TextBlock = {
       id: uuid(),
-      text: "Click to edit",
+      text: "",
       x: 10,
       y: 40,
       width: 80,
@@ -369,6 +369,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
           : p
       ),
     }));
+    return block;
   }, []);
 
   const updateTextBlock = useCallback(

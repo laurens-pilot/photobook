@@ -20,6 +20,7 @@ import type { TextBlock } from "@/lib/types";
 const PAGE_ASPECT = 148 / 210;
 
 export default function EditPage() {
+  const bookCtx = useBook();
   const {
     book,
     currentSpreadIndex,
@@ -30,7 +31,8 @@ export default function EditPage() {
     removeTextBlock,
     swapPhotos,
     updateSlot,
-  } = useBook();
+    addTextBlock,
+  } = bookCtx;
 
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
@@ -168,6 +170,18 @@ export default function EditPage() {
     }
   }, []);
 
+  const handleAddText = useCallback(() => {
+    const pageId = selectedPageId || leftPage?.id;
+    if (!pageId) return;
+    const block = addTextBlock(pageId);
+    // Immediately open the edit dialog for the new block
+    setEditingTextBlock(block);
+    setEditingTextPageId(pageId);
+    setSelectedTextId(block.id);
+    setSelectedPageId(pageId);
+    setSelectedSlotId(null);
+  }, [selectedPageId, leftPage?.id]);
+
   const handleAddPhotos = useCallback(() => {
     fileInputRef.current?.click();
   }, []);
@@ -187,6 +201,7 @@ export default function EditPage() {
       <Toolbar
         onAddPhotos={handleAddPhotos}
         onTogglePhotoPool={() => setPhotoPoolOpen((v) => !v)}
+        onAddText={handleAddText}
         onEditCaptions={(anchor) => {
           // Edit captions for the left page of current spread (or selected page)
           const pageId = selectedPageId || leftPage?.id;
