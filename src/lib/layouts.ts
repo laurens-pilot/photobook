@@ -126,7 +126,7 @@ function layout4TopOneBotThree(photos: Photo[]): PhotoSlot[] {
   ];
 }
 
-function chooseBestLayout(photos: Photo[]): PhotoSlot[] {
+export function chooseBestLayout(photos: Photo[]): PhotoSlot[] {
   const count = photos.length;
   if (count === 0) return [];
   if (count === 1) return layout1(photos);

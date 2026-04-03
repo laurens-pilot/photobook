@@ -26,6 +26,7 @@ export default function EditPage() {
     updateTextBlock,
     removeTextBlock,
     swapPhotos,
+    movePhotoToPage,
     updateSlot,
     addTextBlock,
     thumbnailUrls,
@@ -284,6 +285,7 @@ export default function EditPage() {
   const handleDrop = useCallback(
     (e: React.DragEvent, toPageId: string, toSlotId: string) => {
       e.preventDefault();
+      e.stopPropagation();
       stopAutoScroll();
       dragOverRef.current = null;
       setDragOverInfo(null);
@@ -298,6 +300,44 @@ export default function EditPage() {
       }
     },
     [swapPhotos, stopAutoScroll]
+  );
+
+  const handlePageDragOver = useCallback(
+    (e: React.DragEvent, pageId: string) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      // Clear slot-level highlight when hovering page background
+      const cur = dragOverRef.current;
+      if (cur !== null) {
+        dragOverRef.current = null;
+        setDragOverInfo(null);
+      }
+    },
+    []
+  );
+
+  const handlePageDrop = useCallback(
+    (e: React.DragEvent, toPageId: string) => {
+      e.preventDefault();
+      stopAutoScroll();
+      dragOverRef.current = null;
+      setDragOverInfo(null);
+      const source = dragSourceRef.current;
+      if (source) {
+        const { pageId: fromPageId, slotId: fromSlotId } = source;
+        if (fromPageId !== toPageId) {
+          // Cross-page drop on empty area: move photo to target page
+          const toPage = pages.find((p) => p.id === toPageId);
+          const filledSlots = toPage?.slots.filter((s) => s.photoId !== null).length ?? 0;
+          if (filledSlots < 4) {
+            movePhotoToPage(fromPageId, fromSlotId, toPageId);
+          }
+        }
+        dragSourceRef.current = null;
+        setDragSourceInfo(null);
+      }
+    },
+    [pages, movePhotoToPage, stopAutoScroll]
   );
 
   const handleDragEnd = useCallback(() => {
@@ -440,6 +480,16 @@ export default function EditPage() {
                           />
                         </Layer>
                       </Stage>
+                      {/* Page-level drop zone (behind slot overlays) */}
+                      <div
+                        onDragOver={(e) => handlePageDragOver(e, lp.id)}
+                        onDrop={(e) => handlePageDrop(e, lp.id)}
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          zIndex: 1,
+                        }}
+                      />
                       {/* Drag-and-drop overlay divs */}
                       {lp.slots.map((slot) => {
                         const isSelected = selectedPageId === lp.id && selectedSlotId === slot.id;
@@ -526,6 +576,16 @@ export default function EditPage() {
                           />
                         </Layer>
                       </Stage>
+                      {/* Page-level drop zone (behind slot overlays) */}
+                      <div
+                        onDragOver={(e) => handlePageDragOver(e, rp.id)}
+                        onDrop={(e) => handlePageDrop(e, rp.id)}
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          zIndex: 1,
+                        }}
+                      />
                       {/* Drag-and-drop overlay divs */}
                       {rp.slots.map((slot) => {
                         const isSelected = selectedPageId === rp.id && selectedSlotId === slot.id;

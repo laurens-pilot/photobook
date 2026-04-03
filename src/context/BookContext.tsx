@@ -30,7 +30,7 @@ import {
   getAppView,
   clearAll,
 } from "@/lib/db";
-import { generateAutoLayout } from "@/lib/layouts";
+import { generateAutoLayout, chooseBestLayout } from "@/lib/layouts";
 import { extractExifDate, createThumbnail } from "@/lib/images";
 
 interface BookContextValue {
@@ -71,6 +71,11 @@ interface BookContextValue {
     fromSlotId: string,
     toPageId: string,
     toSlotId: string
+  ) => void;
+  movePhotoToPage: (
+    fromPageId: string,
+    fromSlotId: string,
+    toPageId: string
   ) => void;
   addTextBlock: (pageId: string) => TextBlock;
   updateTextBlock: (
@@ -377,6 +382,57 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const movePhotoToPage = useCallback(
+    (fromPageId: string, fromSlotId: string, toPageId: string) => {
+      setBook((prev) => {
+        const fromPage = prev.pages.find((p) => p.id === fromPageId);
+        const toPage = prev.pages.find((p) => p.id === toPageId);
+        if (!fromPage || !toPage) return prev;
+
+        const fromSlot = fromPage.slots.find((s) => s.id === fromSlotId);
+        if (!fromSlot || !fromSlot.photoId) return prev;
+
+        const movedPhotoId = fromSlot.photoId;
+
+        // Collect photoIds for each page after the move
+        const sourcePhotoIds = fromPage.slots
+          .map((s) => s.photoId)
+          .filter((id): id is string => id !== null && id !== movedPhotoId);
+        const targetPhotoIds = [
+          ...toPage.slots
+            .map((s) => s.photoId)
+            .filter((id): id is string => id !== null),
+          movedPhotoId,
+        ];
+
+        if (targetPhotoIds.length > 4) return prev;
+
+        // Build fake Photo objects for chooseBestLayout (it needs width/height for orientation)
+        const makePhotoStub = (photoId: string): Photo => {
+          const photo = photos.find((p) => p.id === photoId);
+          return photo || { id: photoId, fileName: "", width: 1, height: 1, dateTaken: 0 };
+        };
+
+        const newPages = prev.pages.map((p) => {
+          if (p.id === fromPageId) {
+            const newSlots = sourcePhotoIds.length > 0
+              ? chooseBestLayout(sourcePhotoIds.map(makePhotoStub))
+              : [];
+            return { ...p, slots: newSlots };
+          }
+          if (p.id === toPageId) {
+            const newSlots = chooseBestLayout(targetPhotoIds.map(makePhotoStub));
+            return { ...p, slots: newSlots };
+          }
+          return p;
+        });
+
+        return { ...prev, pages: newPages };
+      });
+    },
+    [photos]
+  );
+
   const addTextBlock = useCallback((pageId: string): TextBlock => {
     const block: TextBlock = {
       id: uuid(),
@@ -469,6 +525,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         updateSlot,
         removeSlot,
         swapPhotos,
+        movePhotoToPage,
         addTextBlock,
         updateTextBlock,
         removeTextBlock,
