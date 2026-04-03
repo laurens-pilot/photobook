@@ -17,10 +17,6 @@ Every photobook service out there requires you to upload your personal photos to
   - ZIP of numbered PNG images
 - **Persistent state** — your book is saved locally in your browser so you can come back to it
 
-## Tech stack
-
-Next.js (static export) · TypeScript · React · MUI v7 · Konva · jsPDF
-
 ## Getting started
 
 ```bash
@@ -29,7 +25,3 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to start making your photobook.
-
-## License
-
-TBD
