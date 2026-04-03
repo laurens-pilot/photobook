@@ -18,6 +18,7 @@ interface PageCanvasProps {
   onTextClick?: (textId: string) => void;
   onTextDblClick?: (textId: string) => void;
   swapSourceSlotId?: string | null;
+  useFullRes?: boolean;
   onDropPhoto?: (photoId: string, slotId: string) => void;
 }
 
@@ -285,13 +286,14 @@ export default function PageCanvas({
   selectedSlotId,
   selectedTextId,
   swapSourceSlotId,
+  useFullRes = false,
   onSlotClick,
   onTextClick,
   onTextDblClick,
   onDropPhoto,
 }: PageCanvasProps) {
   const { thumbnailUrls, photoUrls } = useBook();
-  const urls = isInteractive ? photoUrls : thumbnailUrls;
+  const urls = isInteractive || useFullRes ? photoUrls : thumbnailUrls;
 
   const captionFontSize = pageHeight * 0.025;
 

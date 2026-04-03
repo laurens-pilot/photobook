@@ -155,13 +155,12 @@ const BookViewer = forwardRef<BookViewerHandle, BookViewerProps>(
             borderRadius: 0.5,
           }}
         >
-          {pages.map((page, idx) => (
+          {pages.map((page) => (
             <PageElement
               key={page.id}
               page={page}
               pageWidth={pageWidth}
               pageHeight={pageHeight}
-              pageNumber={idx + 1}
             />
           ))}
         </Box>
@@ -176,12 +175,10 @@ function PageElement({
   page,
   pageWidth,
   pageHeight,
-  pageNumber,
 }: {
   page: BookPage;
   pageWidth: number;
   pageHeight: number;
-  pageNumber: number;
 }) {
   return (
     <div
@@ -199,6 +196,7 @@ function PageElement({
             page={page}
             pageWidth={pageWidth}
             pageHeight={pageHeight}
+            useFullRes
           />
         </Layer>
       </Stage>
