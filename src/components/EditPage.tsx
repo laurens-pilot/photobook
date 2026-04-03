@@ -523,7 +523,7 @@ export default function EditPage() {
                       })}
                     </Box>
                     <Typography
-                      sx={{ fontSize: "0.6rem", color: "#666", fontWeight: 600, textAlign: "center", mt: 0.5 }}
+                      sx={{ fontSize: "0.75rem", color: "#aaa", fontWeight: 600, textAlign: "center", mt: 0.5 }}
                     >
                       {spread.left! + 1}
                     </Typography>
@@ -619,7 +619,7 @@ export default function EditPage() {
                       })}
                     </Box>
                     <Typography
-                      sx={{ fontSize: "0.6rem", color: "#666", fontWeight: 600, textAlign: "center", mt: 0.5 }}
+                      sx={{ fontSize: "0.75rem", color: "#aaa", fontWeight: 600, textAlign: "center", mt: 0.5 }}
                     >
                       {spread.right! + 1}
                     </Typography>
