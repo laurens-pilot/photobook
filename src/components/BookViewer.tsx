@@ -153,6 +153,17 @@ const BookViewer = forwardRef<BookViewerHandle, BookViewerProps>(
             position: "relative",
             boxShadow: "0 40px 100px -20px rgba(0,0,0,0.6)",
             borderRadius: 0.5,
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              top: 0,
+              left: "50%",
+              width: "1px",
+              height: "100%",
+              backgroundColor: "rgba(0,0,0,0.12)",
+              zIndex: 10,
+              pointerEvents: "none",
+            },
           }}
         >
           {pages.map((page) => (
