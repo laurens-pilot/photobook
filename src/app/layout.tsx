@@ -8,6 +8,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Ente Photobook",
   description: "Create beautiful photobooks privately in your browser",
+  icons: {
+    icon: "/favicon-32x32.png",
+    apple: "/icon-192x192.png",
+  },
 };
 
 export default function RootLayout({
