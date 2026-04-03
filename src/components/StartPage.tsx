@@ -219,7 +219,7 @@ export default function StartPage() {
             flexDirection: "column",
             alignItems: "center",
             textAlign: "center",
-            maxWidth: 900,
+            maxWidth: 1100,
           }}
         >
           <Typography
@@ -232,7 +232,7 @@ export default function StartPage() {
               lineHeight: 1.1,
             }}
           >
-            Create your own photobook
+            Your memories deserve a book
           </Typography>
           <Typography
             sx={{
@@ -245,8 +245,8 @@ export default function StartPage() {
               mb: 6,
             }}
           >
-            A completely private, local-first photobook maker. Your photos
-            never leave your device.
+            Drop in your photos, get a print-ready photobook — beautifully
+            arranged, completely private, all in your browser.
           </Typography>
 
           {/* Preview card */}
@@ -311,7 +311,7 @@ export default function StartPage() {
                     letterSpacing: "0.1em",
                   }}
                 >
-                  2024 Collection
+                  2026 Collection
                 </Typography>
               </Box>
             </Box>
@@ -354,7 +354,7 @@ export default function StartPage() {
               transition: "all 0.3s ease",
             }}
           >
-            Select Images from Device
+            Choose Your Photos
           </Button>
 
           <input
@@ -377,7 +377,7 @@ export default function StartPage() {
               fontSize: "0.85rem",
             }}
           >
-            {["High Resolution Support", "Smart Layout Engine", "Full Privacy"].map(
+            {["Print-Ready Quality", "Automatic Layouts", "Fully Private"].map(
               (label) => (
                 <Box
                   key={label}
@@ -407,18 +407,18 @@ export default function StartPage() {
         {[
           {
             icon: <AutoStoriesIcon sx={{ fontSize: 28, color: "#006E0F" }} />,
-            title: "The Curator's Touch",
-            desc: "Our layout engine understands the visual flow of your photos, creating high-end editorial designs automatically.",
+            title: "Automatic Layouts",
+            desc: "Drop in your photos and get beautifully arranged pages instantly — landscape, portrait, or mixed, it just works.",
           },
           {
             icon: <HistoryEduIcon sx={{ fontSize: 28, color: "#006E0F" }} />,
-            title: "Narrative Control",
-            desc: "Add captions, quotes, and memories in premium typography that mimics fine-art monographs.",
+            title: "Add Your Story",
+            desc: "Add captions, quotes, and titles to tell the story behind your photos in elegant typography.",
           },
           {
             icon: <ShieldIcon sx={{ fontSize: 28, color: "#006E0F" }} />,
-            title: "Full Privacy",
-            desc: "Everything happens in your browser. No uploads, no accounts, just your memories turned into a PDF you can print anywhere.",
+            title: "Completely Private",
+            desc: "Everything happens in your browser. No uploads, no accounts — just your memories turned into a PDF you can print anywhere.",
           },
         ].map((feat) => (
           <Box key={feat.title} sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>

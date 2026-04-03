@@ -35,6 +35,7 @@ export default function EditPage() {
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
   const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
   const [dragSourceInfo, setDragSourceInfo] = useState<{ pageId: string; slotId: string } | null>(null);
+  const dragSourceRef = useRef<{ pageId: string; slotId: string } | null>(null);
   const [dragOverInfo, setDragOverInfo] = useState<{ pageId: string; slotId: string } | null>(null);
   const [editingTextBlock, setEditingTextBlock] = useState<TextBlock | null>(
     null
@@ -187,7 +188,9 @@ export default function EditPage() {
   // --- Drag-and-drop handlers for photo reordering ---
   const handleDragStart = useCallback(
     (e: React.DragEvent, pageId: string, slotId: string, photoId: string) => {
-      setDragSourceInfo({ pageId, slotId });
+      const source = { pageId, slotId };
+      dragSourceRef.current = source;
+      setDragSourceInfo(source);
       e.dataTransfer.effectAllowed = "move";
       e.dataTransfer.setData("text/plain", JSON.stringify({ pageId, slotId }));
       // Create a small drag ghost from the thumbnail
@@ -280,19 +283,22 @@ export default function EditPage() {
       e.preventDefault();
       stopAutoScroll();
       setDragOverInfo(null);
-      if (dragSourceInfo) {
-        const { pageId: fromPageId, slotId: fromSlotId } = dragSourceInfo;
+      const source = dragSourceRef.current;
+      if (source) {
+        const { pageId: fromPageId, slotId: fromSlotId } = source;
         if (fromPageId !== toPageId || fromSlotId !== toSlotId) {
           swapPhotos(fromPageId, fromSlotId, toPageId, toSlotId);
         }
+        dragSourceRef.current = null;
         setDragSourceInfo(null);
       }
     },
-    [dragSourceInfo, swapPhotos, stopAutoScroll]
+    [swapPhotos, stopAutoScroll]
   );
 
   const handleDragEnd = useCallback(() => {
     stopAutoScroll();
+    dragSourceRef.current = null;
     setDragSourceInfo(null);
     setDragOverInfo(null);
   }, [stopAutoScroll]);
