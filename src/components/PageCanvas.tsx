@@ -17,7 +17,8 @@ interface PageCanvasProps {
   selectedTextId?: string | null;
   onTextClick?: (textId: string) => void;
   onTextDblClick?: (textId: string) => void;
-  onDropPhoto?: (photoId: string, x: number, y: number) => void;
+  swapSourceSlotId?: string | null;
+  onDropPhoto?: (photoId: string, slotId: string) => void;
 }
 
 function PhotoSlotRenderer({
@@ -26,6 +27,8 @@ function PhotoSlotRenderer({
   pageHeight,
   photoUrl,
   isSelected,
+  isSwapSource,
+  isSwapTarget,
   onClick,
   isInteractive,
   pageId,
@@ -35,6 +38,8 @@ function PhotoSlotRenderer({
   pageHeight: number;
   photoUrl?: string;
   isSelected: boolean;
+  isSwapSource: boolean;
+  isSwapTarget: boolean;
   onClick: () => void;
   isInteractive: boolean;
   pageId: string;
@@ -119,8 +124,35 @@ function PhotoSlotRenderer({
           }}
         />
       )}
+      {/* Swap source indicator */}
+      {isSwapSource && (
+        <Rect
+          x={sx}
+          y={sy}
+          width={sw}
+          height={sh}
+          stroke="#006E0F"
+          strokeWidth={3}
+          dash={[8, 4]}
+          listening={false}
+        />
+      )}
+      {/* Swap target indicator */}
+      {isSwapTarget && !isSwapSource && (
+        <Rect
+          x={sx}
+          y={sy}
+          width={sw}
+          height={sh}
+          stroke="#08C225"
+          strokeWidth={2}
+          dash={[6, 3]}
+          fill="rgba(8, 194, 37, 0.08)"
+          listening={false}
+        />
+      )}
       {/* Selection border */}
-      {isSelected && (
+      {isSelected && !isSwapSource && (
         <Rect
           x={sx}
           y={sy}
@@ -137,9 +169,10 @@ function PhotoSlotRenderer({
           x={sx}
           y={sy + sh / 2 - 8}
           width={sw}
-          text="Drop photo here"
+          text={isSwapTarget ? "Drop here" : "Empty slot"}
           fontSize={12}
-          fill="#999"
+          fill={isSwapTarget ? "#08C225" : "#999"}
+          fontStyle={isSwapTarget ? "bold" : "normal"}
           align="center"
         />
       )}
@@ -251,9 +284,11 @@ export default function PageCanvas({
   isInteractive = false,
   selectedSlotId,
   selectedTextId,
+  swapSourceSlotId,
   onSlotClick,
   onTextClick,
   onTextDblClick,
+  onDropPhoto,
 }: PageCanvasProps) {
   const { thumbnailUrls, photoUrls } = useBook();
   const urls = isInteractive ? photoUrls : thumbnailUrls;
@@ -274,6 +309,8 @@ export default function PageCanvas({
           pageHeight={pageHeight}
           photoUrl={slot.photoId ? urls.get(slot.photoId) : undefined}
           isSelected={selectedSlotId === slot.id}
+          isSwapSource={swapSourceSlotId === slot.id}
+          isSwapTarget={swapSourceSlotId !== null && swapSourceSlotId !== slot.id}
           onClick={() => onSlotClick?.(slot.id)}
           isInteractive={isInteractive}
           pageId={page.id}

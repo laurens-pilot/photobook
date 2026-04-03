@@ -4,8 +4,7 @@ import React, { useState, useRef, useCallback, useMemo } from "react";
 import { Box, Typography, IconButton } from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import ZoomInIcon from "@mui/icons-material/ZoomIn";
-import GridViewIcon from "@mui/icons-material/GridView";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import { Stage, Layer } from "react-konva";
 import { useBook } from "@/context/BookContext";
 import PageCanvas from "./PageCanvas";
@@ -27,11 +26,15 @@ export default function EditPage() {
     updatePage,
     updateTextBlock,
     removeTextBlock,
+    swapPhotos,
+    updateSlot,
   } = useBook();
 
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
   const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
+  const [swapSourceSlotId, setSwapSourceSlotId] = useState<string | null>(null);
+  const [swapSourcePageId, setSwapSourcePageId] = useState<string | null>(null);
   const [editingTextBlock, setEditingTextBlock] = useState<TextBlock | null>(
     null
   );
@@ -69,11 +72,25 @@ export default function EditPage() {
 
   const handleSlotClick = useCallback(
     (pageId: string, slotId: string) => {
+      // If we have a swap source and click a different slot, perform swap
+      if (swapSourceSlotId && swapSourcePageId) {
+        if (swapSourceSlotId !== slotId || swapSourcePageId !== pageId) {
+          swapPhotos(swapSourcePageId, swapSourceSlotId, pageId, slotId);
+          setSwapSourceSlotId(null);
+          setSwapSourcePageId(null);
+          setSelectedSlotId(null);
+          setSelectedPageId(null);
+          return;
+        }
+        // Clicked same slot again — cancel swap mode
+        setSwapSourceSlotId(null);
+        setSwapSourcePageId(null);
+      }
       setSelectedSlotId(slotId);
       setSelectedPageId(pageId);
       setSelectedTextId(null);
     },
-    []
+    [swapSourceSlotId, swapSourcePageId, swapPhotos]
   );
 
   const handleTextClick = useCallback(
@@ -98,11 +115,13 @@ export default function EditPage() {
   );
 
   const handleStageClick = useCallback((e: any) => {
-    // Clicked on empty area - deselect
+    // Clicked on empty area - deselect and cancel swap
     if (e.target === e.target.getStage()) {
       setSelectedSlotId(null);
       setSelectedPageId(null);
       setSelectedTextId(null);
+      setSwapSourceSlotId(null);
+      setSwapSourcePageId(null);
     }
   }, []);
 
@@ -127,6 +146,17 @@ export default function EditPage() {
         selectedSlotId={selectedSlotId}
         selectedPageId={selectedPageId}
         selectedTextId={selectedTextId}
+        isSwapMode={swapSourceSlotId !== null}
+        onStartSwap={() => {
+          if (selectedSlotId && selectedPageId) {
+            setSwapSourceSlotId(selectedSlotId);
+            setSwapSourcePageId(selectedPageId);
+          }
+        }}
+        onCancelSwap={() => {
+          setSwapSourceSlotId(null);
+          setSwapSourcePageId(null);
+        }}
       />
 
       {/* Main Canvas Area */}
@@ -153,6 +183,27 @@ export default function EditPage() {
             gap: 4,
           }}
         >
+          {/* Swap mode indicator */}
+          {swapSourceSlotId && (
+            <Box
+              sx={{
+                bgcolor: "rgba(8, 194, 37, 0.1)",
+                border: "1px solid #08C225",
+                borderRadius: 999,
+                px: 3,
+                py: 0.75,
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+              }}
+            >
+              <SwapHorizIcon sx={{ fontSize: 18, color: "#006E0F" }} />
+              <Typography sx={{ fontSize: "0.8rem", fontWeight: 600, color: "#006E0F" }}>
+                Click another photo slot to swap
+              </Typography>
+            </Box>
+          )}
+
           {/* Spread container */}
           <Box sx={{ display: "flex", gap: `${PAGE_GAP}px`, alignItems: "start" }}>
             {/* Left page */}
@@ -181,6 +232,7 @@ export default function EditPage() {
                       selectedTextId={
                         selectedPageId === leftPage.id ? selectedTextId : null
                       }
+                      swapSourceSlotId={swapSourceSlotId}
                       onSlotClick={(slotId) =>
                         handleSlotClick(leftPage.id, slotId)
                       }
@@ -229,6 +281,7 @@ export default function EditPage() {
                       selectedTextId={
                         selectedPageId === rightPage.id ? selectedTextId : null
                       }
+                      swapSourceSlotId={swapSourceSlotId}
                       onSlotClick={(slotId) =>
                         handleSlotClick(rightPage.id, slotId)
                       }
