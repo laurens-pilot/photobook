@@ -1,13 +1,6 @@
 "use client";
 
-import React, {
-  useRef,
-  useEffect,
-  useState,
-  useCallback,
-  forwardRef,
-  useImperativeHandle,
-} from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { Box } from "@mui/material";
 import { PageFlip } from "page-flip";
 import { Stage, Layer } from "react-konva";
@@ -49,60 +42,74 @@ export default function BookViewer({
   const pageHeight = Math.min(dimensions.height * 0.85, 600);
   const pageWidth = Math.round(pageHeight * PAGE_ASPECT);
 
-  // Initialize page-flip
-  useEffect(() => {
-    if (!bookRef.current || pages.length === 0) return;
-
-    // Destroy previous instance
+  const safeDestroy = useCallback(() => {
     if (pageFlipRef.current) {
-      pageFlipRef.current.destroy();
+      try {
+        pageFlipRef.current.destroy();
+      } catch {
+        // page-flip can throw if UI wasn't fully initialized
+      }
       pageFlipRef.current = null;
     }
+    setReady(false);
+  }, []);
 
-    const pf = new PageFlip(bookRef.current, {
-      width: pageWidth,
-      height: pageHeight,
-      size: "fixed",
-      minWidth: 200,
-      maxWidth: 500,
-      minHeight: 280,
-      maxHeight: 710,
-      showCover: true,
-      maxShadowOpacity: 0.3,
-      mobileScrollSupport: false,
-      flippingTime: 800,
-      useMouseEvents: true,
-      swipeDistance: 30,
-      startPage: currentSpread,
-      drawShadow: true,
-      autoSize: false,
-      startZIndex: 0,
-      showPageCorners: true,
-    });
+  // Initialize page-flip after DOM has rendered the page elements
+  useEffect(() => {
+    if (!bookRef.current || pages.length === 0 || pageWidth <= 0) return;
 
-    // Load pages from HTML children
-    const pageElements = bookRef.current.querySelectorAll(".page-flip-page");
-    if (pageElements.length > 0) {
-      pf.loadFromHTML(Array.from(pageElements) as HTMLElement[]);
-    }
+    // Destroy previous instance
+    safeDestroy();
 
-    pf.on("flip", (e: any) => {
-      const pageIndex = e.data as number;
-      // page-flip reports the page being flipped to
-      const spreadIdx = pageIndex % 2 === 0 ? pageIndex : pageIndex - 1;
-      onSpreadChange(spreadIdx);
-    });
+    // Use a microtask to ensure React has flushed the page elements to the DOM
+    const timerId = setTimeout(() => {
+      if (!bookRef.current) return;
 
-    pageFlipRef.current = pf;
-    setReady(true);
+      const pageElements = bookRef.current.querySelectorAll(".page-flip-page");
+      if (pageElements.length === 0) return;
+
+      try {
+        const pf = new PageFlip(bookRef.current, {
+          width: pageWidth,
+          height: pageHeight,
+          size: "fixed",
+          minWidth: 200,
+          maxWidth: 500,
+          minHeight: 280,
+          maxHeight: 710,
+          showCover: true,
+          maxShadowOpacity: 0.3,
+          mobileScrollSupport: false,
+          flippingTime: 800,
+          useMouseEvents: true,
+          swipeDistance: 30,
+          startPage: currentSpread,
+          drawShadow: true,
+          autoSize: false,
+          startZIndex: 0,
+          showPageCorners: true,
+        });
+
+        pf.loadFromHTML(Array.from(pageElements) as HTMLElement[]);
+
+        pf.on("flip", (e: any) => {
+          const pageIndex = e.data as number;
+          const spreadIdx = pageIndex % 2 === 0 ? pageIndex : pageIndex - 1;
+          onSpreadChange(spreadIdx);
+        });
+
+        pageFlipRef.current = pf;
+        setReady(true);
+      } catch (e) {
+        console.warn("PageFlip initialization failed:", e);
+      }
+    }, 50);
 
     return () => {
-      if (pageFlipRef.current) {
-        pageFlipRef.current.destroy();
-        pageFlipRef.current = null;
-      }
+      clearTimeout(timerId);
+      safeDestroy();
     };
-  }, [pageWidth, pageHeight, pages.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pageWidth, pageHeight, pages.length, safeDestroy]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync external spread changes to page-flip
   useEffect(() => {
