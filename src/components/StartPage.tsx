@@ -49,7 +49,7 @@ export default function StartPage() {
         .slice(0, MAX_PHOTOS);
 
       if (valid.length > 0) {
-        addPhotos(valid);
+        addPhotos(valid, true);
       }
     },
     [addPhotos]

@@ -45,7 +45,7 @@ interface BookContextValue {
   photos: Photo[];
   photoUrls: Map<string, string>; // id -> objectURL (full)
   thumbnailUrls: Map<string, string>; // id -> objectURL (thumb)
-  addPhotos: (files: File[]) => Promise<void>;
+  addPhotos: (files: File[], replace?: boolean) => Promise<void>;
   processingPhotos: boolean;
   processingProgress: number;
 
@@ -185,19 +185,21 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   const rafRef = useRef<number>(0);
 
   const addPhotos = useCallback(
-    async (files: File[]) => {
+    async (files: File[], replace = false) => {
       setProcessingPhotos(true);
       progressRef.current = 0;
       setProcessingProgress(0);
 
-      // Clear previous session
-      photoUrls.forEach((url) => URL.revokeObjectURL(url));
-      thumbnailUrls.forEach((url) => URL.revokeObjectURL(url));
-      await clearAll();
+      if (replace) {
+        // Clear previous session when starting fresh from start page
+        photoUrls.forEach((url) => URL.revokeObjectURL(url));
+        thumbnailUrls.forEach((url) => URL.revokeObjectURL(url));
+        await clearAll();
+      }
 
       const newPhotos: Photo[] = [];
-      const newFullUrls = new Map<string, string>();
-      const newThumbUrls = new Map<string, string>();
+      const newFullUrls = replace ? new Map<string, string>() : new Map(photoUrls);
+      const newThumbUrls = replace ? new Map<string, string>() : new Map(thumbnailUrls);
 
       // Flush progress to state only on animation frames
       const scheduleProgressUpdate = (value: number) => {
@@ -268,19 +270,20 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       }
       setProcessingProgress(100);
 
-      setPhotos(newPhotos);
+      const allPhotos = replace ? newPhotos : [...photos, ...newPhotos];
+      setPhotos(allPhotos);
       setPhotoUrls(newFullUrls);
       setThumbnailUrls(newThumbUrls);
 
       // Generate auto layout
-      const pages = generateAutoLayout(newPhotos);
+      const pages = generateAutoLayout(allPhotos);
       setBook({ pages, currentSpreadIndex: 0 });
       setCurrentSpreadIndex(0);
 
       setProcessingPhotos(false);
       setAppViewState("edit");
     },
-    [photoUrls, thumbnailUrls]
+    [photos, photoUrls, thumbnailUrls]
   );
 
   const addPage = useCallback(
