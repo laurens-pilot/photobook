@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Box, Typography, IconButton } from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -49,18 +49,56 @@ export default function EditPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
   const pages = book.pages;
   const leftPage = pages[currentSpreadIndex];
   const rightPage = pages[currentSpreadIndex + 1];
   const totalPages = pages.length;
 
-  // Calculate page dimensions to fit container
-  // Target: two A5 pages side by side with gap
   const PAGE_GAP = 2;
 
-  // Use a responsive page width
-  const pageWidth = 380;
-  const pageHeight = Math.round(pageWidth / PAGE_ASPECT);
+  // Observe container size for responsive layout
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect;
+      setContainerSize({ width, height });
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Calculate page dimensions to fit two pages side-by-side within the container
+  // Reserve space for padding (64px each side) and gap
+  const { pageWidth, pageHeight } = useMemo(() => {
+    const availW = containerSize.width - 128 - PAGE_GAP; // subtract horizontal padding + gap
+    const availH = containerSize.height - 160; // subtract vertical padding + nav bar
+
+    if (availW <= 0 || availH <= 0) {
+      return { pageWidth: 380, pageHeight: Math.round(380 / PAGE_ASPECT) };
+    }
+
+    // Two pages side by side
+    const maxPageW = availW / 2;
+    const maxPageH = availH;
+
+    // Constrain by aspect ratio
+    let pw = maxPageW;
+    let ph = pw / PAGE_ASPECT;
+
+    if (ph > maxPageH) {
+      ph = maxPageH;
+      pw = ph * PAGE_ASPECT;
+    }
+
+    // Clamp minimum and maximum
+    pw = Math.max(200, Math.min(pw, 500));
+    ph = Math.round(pw / PAGE_ASPECT);
+
+    return { pageWidth: Math.round(pw), pageHeight: ph };
+  }, [containerSize.width, containerSize.height]);
 
   const goToSpread = useCallback(
     (idx: number) => {
