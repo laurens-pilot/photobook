@@ -201,7 +201,7 @@ export default function ResultsPage() {
               py: 1,
               borderRadius: 999,
               minWidth: 180,
-              minHeight: 48,
+              minHeight: 56,
             }}
           >
             <Typography
