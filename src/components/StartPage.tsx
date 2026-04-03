@@ -254,11 +254,14 @@ export default function StartPage() {
             sx={{
               mb: 6,
               position: "relative",
-              "& .card": {
+              "& .card, & .card-shadow": {
                 transition: "transform 0.5s ease",
               },
               "&:hover .card": {
                 transform: "rotate(0deg) !important",
+              },
+              "&:hover .card-shadow": {
+                transform: "rotate(0deg) translate(16px, 16px) !important",
               },
             }}
           >
@@ -275,20 +278,20 @@ export default function StartPage() {
               }}
             >
               <Box
+                component="img"
+                src="/hero-photo.jpg"
+                alt="A wooden boat on a turquoise alpine lake"
+                draggable={false}
+                onDragStart={(e: React.DragEvent) => e.preventDefault()}
                 sx={{
                   width: { xs: 300, md: 500 },
                   height: { xs: 200, md: 320 },
-                  bgcolor: "#E8E8EA",
                   borderRadius: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  objectFit: "cover",
+                  userSelect: "none",
+                  pointerEvents: "none",
                 }}
-              >
-                <AutoStoriesIcon
-                  sx={{ fontSize: 64, color: "#ccc" }}
-                />
-              </Box>
+              />
               <Box
                 sx={{
                   mt: 2,
@@ -301,7 +304,7 @@ export default function StartPage() {
                 <Typography
                   sx={{ fontWeight: 700, fontSize: "1rem", color: "#333" }}
                 >
-                  Summer Monograph
+                  Weekend in the Mountains
                 </Typography>
                 <Typography
                   sx={{
@@ -311,11 +314,12 @@ export default function StartPage() {
                     letterSpacing: "0.1em",
                   }}
                 >
-                  2026 Collection
+                  Travel Memories
                 </Typography>
               </Box>
             </Box>
             <Box
+              className="card-shadow"
               sx={{
                 position: "absolute",
                 inset: 0,
