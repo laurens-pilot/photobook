@@ -61,19 +61,6 @@ export default function NavBar() {
             Next
           </Button>
         )}
-        {appView === "results" && (
-          <Button
-            variant="contained"
-            onClick={() => setAppView("edit")}
-            sx={{
-              background: "linear-gradient(135deg, #006E0F 0%, #08C225 100%)",
-              fontWeight: 700,
-              px: 4,
-            }}
-          >
-            Edit Book
-          </Button>
-        )}
       </Box>
     </Box>
   );
