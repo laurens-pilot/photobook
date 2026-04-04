@@ -54,7 +54,7 @@ function AppContent() {
               onClick={startOver}
               sx={{ color: "#ba1a1a", fontWeight: 600 }}
             >
-              Start Over
+              Start over
             </Button>
           }
         >

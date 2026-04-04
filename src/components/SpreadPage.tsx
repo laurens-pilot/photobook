@@ -440,7 +440,7 @@ export default function SpreadPage({
         {pageIndex === 0
           ? "Cover"
           : pageIndex === totalPages - 1
-            ? "Back Cover"
+            ? "Back cover"
             : pageIndex}
       </Typography>
     </Box>

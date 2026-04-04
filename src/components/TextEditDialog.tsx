@@ -53,7 +53,7 @@ export default function TextEditDialog({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ fontFamily: "'Manrope', sans-serif", fontWeight: 700 }}>
-        Edit Text
+        Edit text
       </DialogTitle>
       <DialogContent>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>

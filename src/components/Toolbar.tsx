@@ -2,8 +2,8 @@
 
 import React from "react";
 import { Box, IconButton, Tooltip, Divider } from "@mui/material";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
-import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
+import AddIcon from "@mui/icons-material/Add";
+import NoteAddIcon from "@mui/icons-material/NoteAdd";
 
 import TextFieldsIcon from "@mui/icons-material/TextFields";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -99,27 +99,7 @@ export default function Toolbar({
         borderRight: "1px solid rgba(255,255,255,0.06)",
       }}
     >
-      <Tooltip title="Add Page" placement="right">
-        <IconButton
-          onClick={handleAddPage}
-          sx={{
-            width: 44,
-            height: 44,
-            color: "#08C225",
-            bgcolor: "rgba(8, 194, 37, 0.12)",
-            borderRadius: 2,
-            boxShadow: "none",
-            "&:hover": { transform: "scale(1.05)" },
-            transition: "all 0.2s",
-          }}
-        >
-          <AddCircleIcon />
-        </IconButton>
-      </Tooltip>
-
-      <Divider sx={{ width: 32, my: 0.5, borderColor: "rgba(255,255,255,0.1)" }} />
-
-      <Tooltip title="Import Photos from Device" placement="right">
+      <Tooltip title="Add photos" placement="right">
         <IconButton
           onClick={onAddPhotos}
           sx={{
@@ -131,11 +111,27 @@ export default function Toolbar({
             transition: "all 0.2s",
           }}
         >
-          <AddPhotoAlternateIcon />
+          <AddIcon />
         </IconButton>
       </Tooltip>
 
-<Tooltip title="Add Text" placement="right">
+      <Tooltip title="Add page" placement="right">
+        <IconButton
+          onClick={handleAddPage}
+          sx={{
+            width: 44,
+            height: 44,
+            color: "#888",
+            "&:hover": { color: "#08C225", bgcolor: "rgba(255,255,255,0.08)" },
+            borderRadius: 2,
+            transition: "all 0.2s",
+          }}
+        >
+          <NoteAddIcon />
+        </IconButton>
+      </Tooltip>
+
+      <Tooltip title="Add text" placement="right">
         <IconButton
           onClick={handleAddText}
           sx={{
@@ -154,7 +150,7 @@ export default function Toolbar({
       {selectedSlotId && (
         <>
           <Divider sx={{ width: 32, my: 0.5, borderColor: "rgba(255,255,255,0.1)" }} />
-          <Tooltip title="Zoom In" placement="right">
+          <Tooltip title="Zoom in" placement="right">
             <IconButton
               onClick={handleZoomIn}
               sx={{
@@ -168,7 +164,7 @@ export default function Toolbar({
               <ZoomInIcon />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Zoom Out" placement="right">
+          <Tooltip title="Zoom out" placement="right">
             <IconButton
               onClick={handleZoomOut}
               sx={{
@@ -188,7 +184,7 @@ export default function Toolbar({
       {(selectedSlotId || selectedTextId) && (
         <>
           <Divider sx={{ width: 32, my: 0.5, borderColor: "rgba(255,255,255,0.1)" }} />
-          <Tooltip title="Delete Selected" placement="right">
+          <Tooltip title="Delete selected" placement="right">
             <IconButton
               onClick={handleDeleteSelected}
               sx={{
@@ -207,7 +203,7 @@ export default function Toolbar({
 
       <Box sx={{ flex: 1 }} />
 
-      <Tooltip title="Remove Current Spread" placement="right">
+      <Tooltip title="Remove current spread" placement="right">
         <IconButton
           onClick={handleRemovePage}
           disabled={book.pages.length <= 2}

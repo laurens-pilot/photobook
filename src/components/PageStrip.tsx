@@ -198,7 +198,7 @@ export default function PageStrip({
                       textAlign: "center",
                     }}
                   >
-                    {spread.left! === 0 ? "Cover" : spread.left! === pages.length - 1 ? "Back Cover" : spread.left!}
+                    {spread.left! === 0 ? "Cover" : spread.left! === pages.length - 1 ? "Back cover" : spread.left!}
                   </Typography>
                 )}
                 {rightPage && (
@@ -212,7 +212,7 @@ export default function PageStrip({
                       ml: leftPage ? "2px" : "auto",
                     }}
                   >
-                    {spread.right! === 0 ? "Cover" : spread.right! === pages.length - 1 ? "Back Cover" : spread.right!}
+                    {spread.right! === 0 ? "Cover" : spread.right! === pages.length - 1 ? "Back cover" : spread.right!}
                   </Typography>
                 )}
               </Box>

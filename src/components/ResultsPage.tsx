@@ -48,11 +48,11 @@ export default function ResultsPage() {
   //   index 0          → "Cover"
   //   index 1          → "1-2"        (first interior spread, counting from 1 after cover)
   //   index 3          → "3-4"
-  //   index N-1        → "Back Cover"
+  //   index N-1        → "Back cover"
   const pageLabel = useMemo(() => {
     if (totalPages === 0) return "";
     if (pageIndex === 0) return "Cover";
-    if (pageIndex >= totalPages - 1) return "Back Cover";
+    if (pageIndex >= totalPages - 1) return "Back cover";
     // Interior spread: pages count from 1 after the cover
     return `${pageIndex}-${pageIndex + 1}`;
   }, [pageIndex, totalPages]);
@@ -250,7 +250,7 @@ export default function ResultsPage() {
                 "&:hover": { color: "white" },
               }}
             >
-              Edit Photobook
+              Edit photobook
             </Button>
 
             <Button
@@ -292,7 +292,7 @@ export default function ResultsPage() {
                   <PictureAsPdfIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText
-                  primary="PDF — A5 Pages"
+                  primary="PDF — A5 pages"
                   secondary="One page per PDF page"
                 />
               </MenuItem>
@@ -301,7 +301,7 @@ export default function ResultsPage() {
                   <PictureAsPdfIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText
-                  primary="PDF — A4 Spreads"
+                  primary="PDF — A4 spreads"
                   secondary="Two pages per PDF page"
                 />
               </MenuItem>
