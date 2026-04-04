@@ -88,7 +88,9 @@ export async function renderPageToCanvas(
     ctx.fillStyle = "#1a1c1d";
     ctx.font = `${Math.round(height * 0.025)}px 'Manrope', sans-serif`;
     ctx.textAlign = "center";
-    ctx.fillText(page.bottomCaption, width / 2, height * 0.97);
+    ctx.textBaseline = "bottom";
+    ctx.fillText(page.bottomCaption, width / 2, height * 0.98);
+    ctx.textBaseline = "alphabetic";
   }
 
   // Draw text blocks

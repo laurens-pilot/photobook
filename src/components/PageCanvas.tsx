@@ -253,22 +253,39 @@ function CaptionText({
   text,
   y,
   pageWidth,
+  pageHeight,
   fontSize,
   isEditing,
+  anchor = "top",
 }: {
   text: string;
   y: number;
   pageWidth: number;
+  pageHeight: number;
   fontSize: number;
   isEditing?: boolean;
+  anchor?: "top" | "bottom";
 }) {
+  const textRef = React.useRef<any>(null);
+  const [adjustedY, setAdjustedY] = React.useState(y);
+
+  React.useEffect(() => {
+    if (anchor === "bottom" && textRef.current) {
+      const textHeight = textRef.current.height();
+      setAdjustedY(y - textHeight);
+    } else {
+      setAdjustedY(y);
+    }
+  }, [text, y, anchor, fontSize, pageWidth]);
+
   // Hide rendered text while editing (HTML overlay replaces it)
   if (isEditing) return null;
   if (!text) return null;
   return (
     <Text
+      ref={textRef}
       x={0}
-      y={y}
+      y={adjustedY}
       width={pageWidth}
       text={text}
       fontSize={fontSize}
@@ -327,15 +344,18 @@ export default function PageCanvas({
         text={page.topCaption}
         y={pageHeight * 0.02}
         pageWidth={pageWidth}
+        pageHeight={pageHeight}
         fontSize={captionFontSize}
         isEditing={editingCaption === "top"}
       />
       <CaptionText
         text={page.bottomCaption}
-        y={pageHeight * 0.96}
+        y={pageHeight * 0.98}
         pageWidth={pageWidth}
+        pageHeight={pageHeight}
         fontSize={captionFontSize}
         isEditing={editingCaption === "bottom"}
+        anchor="bottom"
       />
 
       {/* Text blocks */}
