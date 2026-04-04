@@ -270,8 +270,12 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         }
       };
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+      // Process each photo: HEIC conversion, dimensions, thumbnail, IndexedDB save
+      type PhotoResult = { photo: Photo; url: string; thumbUrl: string };
+      const results: (PhotoResult | null)[] = new Array(files.length).fill(null);
+      let completed = 0;
+
+      const processPhoto = async (file: File, index: number) => {
         let blob: Blob = file;
 
         // Convert HEIC/HEIF
@@ -291,7 +295,9 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
             blob = Array.isArray(converted) ? converted[0] : converted;
           } catch (e) {
             console.warn("HEIC conversion failed for", file.name, e);
-            continue;
+            completed++;
+            scheduleProgressUpdate(Math.round((completed / files.length) * 100));
+            return;
           }
         }
 
@@ -314,11 +320,32 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         await saveThumbnail(photo.id, thumb);
 
         const thumbUrl = URL.createObjectURL(thumb);
-        newFullUrls.set(photo.id, url);
-        newThumbUrls.set(photo.id, thumbUrl);
-        newPhotos.push(photo);
+        results[index] = { photo, url, thumbUrl };
+        completed++;
+        scheduleProgressUpdate(Math.round((completed / files.length) * 100));
+      };
 
-        scheduleProgressUpdate(Math.round(((i + 1) / files.length) * 100));
+      // Run with concurrency limit of 6
+      const CONCURRENCY = 6;
+      const taskQueue = files.map((f, i) => () => processPhoto(f, i));
+      const workers = Array.from(
+        { length: Math.min(CONCURRENCY, files.length) },
+        async () => {
+          while (taskQueue.length > 0) {
+            const task = taskQueue.shift()!;
+            await task();
+          }
+        }
+      );
+      await Promise.all(workers);
+
+      // Collect results in original file order
+      for (const result of results) {
+        if (result) {
+          newFullUrls.set(result.photo.id, result.url);
+          newThumbUrls.set(result.photo.id, result.thumbUrl);
+          newPhotos.push(result.photo);
+        }
       }
 
       // Cancel any pending frame and flush final progress
