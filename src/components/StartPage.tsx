@@ -252,7 +252,7 @@ export default function StartPage() {
           {/* Preview card */}
           <Box
             sx={{
-              mb: 6,
+              mb: 8,
               position: "relative",
               "& .card": {
                 transition: "transform 0.5s ease",
