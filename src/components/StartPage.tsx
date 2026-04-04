@@ -254,14 +254,11 @@ export default function StartPage() {
             sx={{
               mb: 6,
               position: "relative",
-              "& .card, & .card-shadow": {
+              "& .card": {
                 transition: "transform 0.5s ease",
               },
               "&:hover .card": {
                 transform: "rotate(0deg) !important",
-              },
-              "&:hover .card-shadow": {
-                transform: "rotate(0deg) translate(16px, 16px) !important",
               },
             }}
           >
@@ -276,24 +273,12 @@ export default function StartPage() {
                 width: { xs: 260, md: 380 },
                 height: "auto",
                 borderRadius: 2,
-                boxShadow: "0px 12px 32px rgba(0, 0, 0, 0.1)",
+                boxShadow: "0px 16px 40px rgba(0, 0, 0, 0.15), 0px 4px 12px rgba(0, 0, 0, 0.08)",
                 transform: "rotate(-3deg)",
                 position: "relative",
                 zIndex: 20,
                 userSelect: "none",
                 pointerEvents: "none",
-              }}
-            />
-            <Box
-              className="card-shadow"
-              sx={{
-                position: "absolute",
-                inset: 0,
-                bgcolor: "rgba(0,0,0,0.04)",
-                borderRadius: 2,
-                transform: "rotate(3deg) translate(16px, 16px)",
-                zIndex: -1,
-                opacity: 0.5,
               }}
             />
           </Box>
