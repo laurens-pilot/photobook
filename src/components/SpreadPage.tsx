@@ -95,7 +95,7 @@ export default function SpreadPage({
   onPageDropOnPage,
   onPageDragEndCleanup,
 }: SpreadPageProps) {
-  const { thumbnailUrls, removePage, setPageLayout, updatePage } = useBook();
+  const { thumbnailUrls, removePage, setPageLayout, setPagePadding, updatePage } = useBook();
 
   // Caption editing
   const [editingCaption, setEditingCaption] = useState<CaptionPosition | null>(null);
@@ -469,6 +469,9 @@ export default function SpreadPage({
           currentVariant={page.layoutVariant}
           thumbnailUrls={slotThumbnails}
           onSelect={(key) => setPageLayout(page.id, key)}
+          paddingH={page.paddingH ?? 0}
+          paddingV={page.paddingV ?? 0}
+          onPaddingChange={(h, v) => setPagePadding(page.id, h, v)}
           side={pickerSide}
         />
       )}

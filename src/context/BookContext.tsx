@@ -78,6 +78,7 @@ interface BookContextValue {
     toPageId: string
   ) => void;
   setPageLayout: (pageId: string, variantKey: string) => void;
+  setPagePadding: (pageId: string, paddingH: number, paddingV: number) => void;
   addTextBlock: (pageId: string) => TextBlock;
   updateTextBlock: (
     pageId: string,
@@ -497,13 +498,36 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         const photoIds = page.slots
           .map((s) => s.photoId)
           .filter((id): id is string => id !== null);
-        const newSlots = applyVariant(variantKey, photoIds);
+        const newSlots = applyVariant(variantKey, photoIds, page.paddingH ?? 0, page.paddingV ?? 0);
         if (newSlots.length === 0) return prev;
         return {
           ...prev,
           pages: prev.pages.map((p) =>
             p.id === pageId
               ? { ...p, slots: newSlots, layoutVariant: variantKey }
+              : p
+          ),
+        };
+      });
+    },
+    []
+  );
+
+  const setPagePadding = useCallback(
+    (pageId: string, paddingH: number, paddingV: number) => {
+      setBook((prev) => {
+        const page = prev.pages.find((p) => p.id === pageId);
+        if (!page || !page.layoutVariant) return prev;
+        const photoIds = page.slots
+          .map((s) => s.photoId)
+          .filter((id): id is string => id !== null);
+        const newSlots = applyVariant(page.layoutVariant, photoIds, paddingH, paddingV);
+        if (newSlots.length === 0) return prev;
+        return {
+          ...prev,
+          pages: prev.pages.map((p) =>
+            p.id === pageId
+              ? { ...p, slots: newSlots, paddingH, paddingV }
               : p
           ),
         };
@@ -606,6 +630,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         swapPhotos,
         movePhotoToPage,
         setPageLayout,
+        setPagePadding,
         addTextBlock,
         updateTextBlock,
         removeTextBlock,

@@ -472,11 +472,48 @@ export function getVariantPreview(key: string): SlotPosition[] {
   }));
 }
 
+/** Extra padding per level (percentage of page dimension) */
+const PADDING_STEPS = [0, 4, 8, 12]; // level 0, 1, 2, 3
+
+/** Apply extra padding to slots by scaling them inward */
+export function applyPadding(
+  slots: PhotoSlot[],
+  paddingH: number,
+  paddingV: number
+): PhotoSlot[] {
+  const extraH = PADDING_STEPS[paddingH] ?? 0;
+  const extraV = PADDING_STEPS[paddingV] ?? 0;
+  if (extraH === 0 && extraV === 0) return slots;
+
+  // Scale from the default content area into a smaller one
+  const oldL = MARGIN, oldT = MARGIN;
+  const oldW = 100 - 2 * MARGIN;
+  const oldH = 100 - 2 * MARGIN;
+  const newL = MARGIN + extraH;
+  const newT = MARGIN + extraV;
+  const newW = 100 - 2 * (MARGIN + extraH);
+  const newH = 100 - 2 * (MARGIN + extraV);
+
+  return slots.map((s) => ({
+    ...s,
+    x: newL + ((s.x - oldL) / oldW) * newW,
+    y: newT + ((s.y - oldT) / oldH) * newH,
+    width: (s.width / oldW) * newW,
+    height: (s.height / oldH) * newH,
+  }));
+}
+
 /** Apply a specific layout variant to a set of photo IDs */
-export function applyVariant(key: string, photoIds: string[]): PhotoSlot[] {
+export function applyVariant(
+  key: string,
+  photoIds: string[],
+  paddingH = 0,
+  paddingV = 0
+): PhotoSlot[] {
   const variant = VARIANT_MAP.get(key);
   if (!variant) return [];
-  return variant.generate(photoIds);
+  const slots = variant.generate(photoIds);
+  return applyPadding(slots, paddingH, paddingV);
 }
 
 // ── Legacy layout selection (orientation-based auto-pick) ─────────

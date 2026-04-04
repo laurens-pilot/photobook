@@ -41,6 +41,8 @@ export interface BookPage {
   topCaption: string;
   bottomCaption: string;
   layoutVariant?: string;
+  paddingH?: number; // extra horizontal padding level (0-2), default 0
+  paddingV?: number; // extra vertical padding level (0-2), default 0
 }
 
 export interface BookState {
