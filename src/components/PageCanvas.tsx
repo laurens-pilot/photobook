@@ -164,7 +164,7 @@ function PhotoSlotRenderer({
           width={sw}
           height={sh}
           stroke="#08C225"
-          strokeWidth={2}
+          strokeWidth={4}
           listening={false}
         />
       )}
@@ -234,7 +234,7 @@ function TextBlockRenderer({
           width={(textRef.current?.width() ?? fontSize * 4) + 6}
           height={(textRef.current?.height() ?? fontSize) + 6}
           stroke="#08C225"
-          strokeWidth={1.5}
+          strokeWidth={3}
           rotation={rotation}
           listening={false}
         />
