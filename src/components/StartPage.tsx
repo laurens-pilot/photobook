@@ -267,57 +267,23 @@ export default function StartPage() {
           >
             <Box
               className="card"
+              component="img"
+              src="/hero-photo.jpg"
+              alt="A photobook page with photos from Delhi"
+              draggable={false}
+              onDragStart={(e: React.DragEvent) => e.preventDefault()}
               sx={{
-                bgcolor: "white",
-                p: 4,
+                width: { xs: 260, md: 380 },
+                height: "auto",
                 borderRadius: 2,
                 boxShadow: "0px 12px 32px rgba(0, 0, 0, 0.1)",
                 transform: "rotate(-3deg)",
                 position: "relative",
                 zIndex: 20,
+                userSelect: "none",
+                pointerEvents: "none",
               }}
-            >
-              <Box
-                component="img"
-                src="/hero-photo.jpg"
-                alt="A wooden boat on a turquoise alpine lake"
-                draggable={false}
-                onDragStart={(e: React.DragEvent) => e.preventDefault()}
-                sx={{
-                  width: { xs: 300, md: 500 },
-                  height: { xs: 200, md: 320 },
-                  borderRadius: 1,
-                  objectFit: "cover",
-                  userSelect: "none",
-                  pointerEvents: "none",
-                }}
-              />
-              <Box
-                sx={{
-                  mt: 2,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  px: 1,
-                }}
-              >
-                <Typography
-                  sx={{ fontWeight: 700, fontSize: "1rem", color: "#1a1c1d" }}
-                >
-                  Weekend in the Mountains
-                </Typography>
-                <Typography
-                  sx={{
-                    fontSize: "0.75rem",
-                    color: "#aaa",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.1em",
-                  }}
-                >
-                  Travel Memories
-                </Typography>
-              </Box>
-            </Box>
+            />
             <Box
               className="card-shadow"
               sx={{
