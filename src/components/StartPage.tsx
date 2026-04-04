@@ -246,7 +246,7 @@ export default function StartPage() {
           >
             Drop in your photos, get a print-ready photobook.
             <br />
-            Beautifully arranged, completely free and private.
+            Beautifully arranged, completely private, and free.
           </Typography>
 
           {/* Preview card */}
