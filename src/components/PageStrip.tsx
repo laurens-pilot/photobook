@@ -95,6 +95,9 @@ export default function PageStrip({
                 cursor: "pointer",
                 borderRadius: 1.5,
                 p: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
                 "&:hover": {
                   bgcolor: "rgba(255,255,255,0.06)",
                 },
@@ -105,8 +108,8 @@ export default function PageStrip({
                 sx={{
                   display: "flex",
                   gap: "2px",
-                  width: THUMB_PAGE_W * 2 + 2, // fixed width matching two thumbnails + gap
                   justifyContent: leftPage ? "flex-start" : "flex-end",
+                  width: THUMB_PAGE_W * 2 + 2,
                 }}
               >
                 {/* Left page thumbnail */}
