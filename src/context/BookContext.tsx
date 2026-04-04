@@ -55,6 +55,12 @@ interface BookContextValue {
   currentSpreadIndex: number;
   setCurrentSpreadIndex: (idx: number) => void;
 
+  // Undo/Redo
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+
   // Page operations
   addPage: (afterIndex?: number) => void;
   removePage: (pageId: string) => void;
@@ -117,8 +123,53 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   const [thumbnailUrls, setThumbnailUrls] = useState<Map<string, string>>(
     new Map()
   );
-  const [book, setBook] = useState<BookState>(emptyBook);
+  const [book, setBookRaw] = useState<BookState>(emptyBook);
   const [currentSpreadIndex, setCurrentSpreadIndex] = useState(0);
+
+  // Undo/Redo history
+  const undoStackRef = useRef<BookState[]>([]);
+  const redoStackRef = useRef<BookState[]>([]);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  const MAX_HISTORY = 50;
+
+  const setBook: React.Dispatch<React.SetStateAction<BookState>> = useCallback(
+    (action) => {
+      setBookRaw((prev) => {
+        undoStackRef.current = [
+          ...undoStackRef.current.slice(-(MAX_HISTORY - 1)),
+          prev,
+        ];
+        redoStackRef.current = [];
+        return typeof action === "function" ? action(prev) : action;
+      });
+      setCanUndo(true);
+      setCanRedo(false);
+    },
+    []
+  );
+
+  const undo = useCallback(() => {
+    if (undoStackRef.current.length === 0) return;
+    setBookRaw((current) => {
+      const prev = undoStackRef.current.pop()!;
+      redoStackRef.current = [...redoStackRef.current, current];
+      setCanUndo(undoStackRef.current.length > 0);
+      setCanRedo(true);
+      return prev;
+    });
+  }, []);
+
+  const redo = useCallback(() => {
+    if (redoStackRef.current.length === 0) return;
+    setBookRaw((current) => {
+      const next = redoStackRef.current.pop()!;
+      undoStackRef.current = [...undoStackRef.current, current];
+      setCanUndo(true);
+      setCanRedo(redoStackRef.current.length > 0);
+      return next;
+    });
+  }, []);
   const [showPageStrip, setShowPageStrip] = useState(true);
   const [processingPhotos, setProcessingPhotos] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
@@ -168,7 +219,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
           setPhotos(savedPhotos);
           setPhotoUrls(fullUrls);
           setThumbnailUrls(thumbUrls);
-          setBook(savedBook);
+          setBookRaw(savedBook);
           setCurrentSpreadIndex(savedBook.currentSpreadIndex);
 
           if (savedView === "edit" || savedView === "results") {
@@ -282,9 +333,13 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       setPhotoUrls(newFullUrls);
       setThumbnailUrls(newThumbUrls);
 
-      // Generate auto layout
+      // Generate auto layout (bypass undo tracking — this is not a user action)
       const pages = generateAutoLayout(allPhotos);
-      setBook({ pages, currentSpreadIndex: 0 });
+      setBookRaw({ pages, currentSpreadIndex: 0 });
+      undoStackRef.current = [];
+      redoStackRef.current = [];
+      setCanUndo(false);
+      setCanRedo(false);
       setCurrentSpreadIndex(0);
 
       setProcessingPhotos(false);
@@ -645,7 +700,11 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
     setPhotos([]);
     setPhotoUrls(new Map());
     setThumbnailUrls(new Map());
-    setBook(emptyBook);
+    setBookRaw(emptyBook);
+    undoStackRef.current = [];
+    redoStackRef.current = [];
+    setCanUndo(false);
+    setCanRedo(false);
     setCurrentSpreadIndex(0);
     setAppViewState("start");
     setRestored(false);
@@ -682,6 +741,10 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
         addTextBlock,
         updateTextBlock,
         removeTextBlock,
+        undo,
+        redo,
+        canUndo,
+        canRedo,
         showPageStrip,
         setShowPageStrip,
         startOver,

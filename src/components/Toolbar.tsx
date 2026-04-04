@@ -4,9 +4,8 @@ import React from "react";
 import { Box, IconButton, Tooltip } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import NoteAddIcon from "@mui/icons-material/NoteAdd";
-
 import TextFieldsIcon from "@mui/icons-material/TextFields";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
 import { useBook } from "@/context/BookContext";
 
 interface ToolbarProps {
@@ -20,9 +19,11 @@ export default function Toolbar({
 }: ToolbarProps) {
   const {
     addPage,
-    removePage,
     currentSpreadIndex,
-    book,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useBook();
 
   const handleAddPage = () => {
@@ -33,12 +34,18 @@ export default function Toolbar({
     onAddText();
   };
 
-  const handleRemovePage = () => {
-    if (book.pages.length <= 2) return;
-    const leftPage = book.pages[currentSpreadIndex];
-    const rightPage = book.pages[currentSpreadIndex + 1];
-    if (rightPage) removePage(rightPage.id);
-    if (leftPage) removePage(leftPage.id);
+  const buttonSx = {
+    width: 44,
+    height: 44,
+    color: "#888",
+    "&:hover": { color: "#08C225", bgcolor: "rgba(255,255,255,0.08)" },
+    borderRadius: 2,
+    transition: "all 0.2s",
+  };
+
+  const disabledButtonSx = {
+    ...buttonSx,
+    "&.Mui-disabled": { color: "#444" },
   };
 
   return (
@@ -56,69 +63,39 @@ export default function Toolbar({
       }}
     >
       <Tooltip title="Add photos" placement="right">
-        <IconButton
-          onClick={onAddPhotos}
-          sx={{
-            width: 44,
-            height: 44,
-            color: "#888",
-            "&:hover": { color: "#08C225", bgcolor: "rgba(255,255,255,0.08)" },
-            borderRadius: 2,
-            transition: "all 0.2s",
-          }}
-        >
+        <IconButton onClick={onAddPhotos} sx={buttonSx}>
           <AddIcon />
         </IconButton>
       </Tooltip>
 
       <Tooltip title="Add page" placement="right">
-        <IconButton
-          onClick={handleAddPage}
-          sx={{
-            width: 44,
-            height: 44,
-            color: "#888",
-            "&:hover": { color: "#08C225", bgcolor: "rgba(255,255,255,0.08)" },
-            borderRadius: 2,
-            transition: "all 0.2s",
-          }}
-        >
+        <IconButton onClick={handleAddPage} sx={buttonSx}>
           <NoteAddIcon />
         </IconButton>
       </Tooltip>
 
       <Tooltip title="Add text" placement="right">
-        <IconButton
-          onClick={handleAddText}
-          sx={{
-            width: 44,
-            height: 44,
-            color: "#888",
-            "&:hover": { color: "#08C225", bgcolor: "rgba(255,255,255,0.08)" },
-            borderRadius: 2,
-            transition: "all 0.2s",
-          }}
-        >
+        <IconButton onClick={handleAddText} sx={buttonSx}>
           <TextFieldsIcon />
         </IconButton>
       </Tooltip>
 
       <Box sx={{ flex: 1 }} />
 
-      <Tooltip title="Remove current spread" placement="right">
-        <IconButton
-          onClick={handleRemovePage}
-          disabled={book.pages.length <= 2}
-          sx={{
-            width: 44,
-            height: 44,
-            color: "#555",
-            "&:hover": { color: "#ba1a1a" },
-            borderRadius: 2,
-          }}
-        >
-          <DeleteOutlineIcon />
-        </IconButton>
+      <Tooltip title="Undo" placement="right">
+        <span>
+          <IconButton onClick={undo} disabled={!canUndo} sx={disabledButtonSx}>
+            <ReplayRoundedIcon />
+          </IconButton>
+        </span>
+      </Tooltip>
+
+      <Tooltip title="Redo" placement="right">
+        <span>
+          <IconButton onClick={redo} disabled={!canRedo} sx={disabledButtonSx}>
+            <ReplayRoundedIcon sx={{ transform: "scaleX(-1)" }} />
+          </IconButton>
+        </span>
       </Tooltip>
     </Box>
   );

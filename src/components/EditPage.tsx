@@ -28,6 +28,8 @@ export default function EditPage() {
     addTextBlock,
     showPageStrip,
     setShowPageStrip,
+    undo,
+    redo,
   } = useBook();
 
   // Selection state
@@ -79,6 +81,22 @@ export default function EditPage() {
 
     return result;
   }, [pages.length]);
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "z") {
+        e.preventDefault();
+        if (e.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [undo, redo]);
 
   // Observe container size for responsive layout
   useEffect(() => {
