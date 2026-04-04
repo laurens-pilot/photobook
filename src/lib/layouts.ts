@@ -451,7 +451,7 @@ const HIDDEN_MIRRORS = new Set([
 
 /** Default padding for specific variants */
 const DEFAULT_PADDING = new Map<string, { h: number; v: number }>([
-  ["4-equal-cols", { h: 0, v: 1 }],
+  ["4-equal-cols", { h: 0, v: 3 }],
 ]);
 
 /** Get the default padding for a variant */
@@ -474,7 +474,9 @@ export function getVariantPreview(key: string): SlotPosition[] {
   const variant = VARIANT_MAP.get(key);
   if (!variant) return [];
   const dummyIds = Array.from({ length: variant.photoCount }, (_, i) => `d${i}`);
-  return variant.generate(dummyIds).map((s) => ({
+  const defaults = getDefaultPadding(key);
+  const slots = applyVariant(key, dummyIds, defaults.h, defaults.v);
+  return slots.map((s) => ({
     x: s.x,
     y: s.y,
     width: s.width,
