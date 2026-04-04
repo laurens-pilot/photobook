@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect, type RefCallback } from "react";
 import { Box, IconButton } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { useBook } from "@/context/BookContext";
@@ -81,6 +81,60 @@ export default function EditPage() {
 
     return result;
   }, [pages.length]);
+
+  // Virtualization: only render visible spreads + buffer
+  const [visibleSpreads, setVisibleSpreads] = useState<Set<number>>(() => new Set([0, 1, 2]));
+  const spreadElsRef = useRef<Map<number, Element>>(new Map());
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        setVisibleSpreads((prev) => {
+          const next = new Set(prev);
+          for (const entry of entries) {
+            const idx = Number((entry.target as HTMLElement).dataset.spreadIndex);
+            if (!isNaN(idx)) {
+              if (entry.isIntersecting) next.add(idx);
+              else next.delete(idx);
+            }
+          }
+          if (next.size === prev.size && [...next].every((v) => prev.has(v)))
+            return prev;
+          return next;
+        });
+      },
+      { root, rootMargin: "600px 0px" }
+    );
+    observerRef.current = observer;
+
+    // Observe all currently tracked elements
+    spreadElsRef.current.forEach((el) => observer.observe(el));
+
+    return () => {
+      observer.disconnect();
+      observerRef.current = null;
+    };
+  }, [spreads.length]);
+
+  const spreadRefCallback = useCallback(
+    (idx: number): RefCallback<HTMLDivElement> =>
+      (el) => {
+        const prev = spreadElsRef.current.get(idx);
+        if (prev && observerRef.current) observerRef.current.unobserve(prev);
+
+        if (el) {
+          spreadElsRef.current.set(idx, el);
+          if (observerRef.current) observerRef.current.observe(el);
+        } else {
+          spreadElsRef.current.delete(idx);
+        }
+      },
+    []
+  );
 
   // Keyboard shortcuts for undo/redo
   useEffect(() => {
@@ -271,14 +325,16 @@ export default function EditPage() {
             gap: 4,
           }}
         >
-          {/* All spreads */}
+          {/* Spreads (virtualized: only visible spreads render full content) */}
           {spreads.map((spread, spreadIdx) => {
+            const isVisible = visibleSpreads.has(spreadIdx);
             const lp = spread.left !== null ? pages[spread.left] : null;
             const rp = spread.right !== null ? pages[spread.right] : null;
 
             return (
               <Box
                 key={spreadIdx}
+                ref={spreadRefCallback(spreadIdx)}
                 data-spread-index={spreadIdx}
                 sx={{
                   display: "flex",
@@ -286,9 +342,10 @@ export default function EditPage() {
                   alignItems: "start",
                   width: PICKER_WIDTH + pageWidth * 2 + PAGE_GAP + PICKER_WIDTH,
                   justifyContent: lp ? "flex-start" : "flex-end",
+                  minHeight: pageHeight,
                 }}
               >
-                {lp && (
+                {isVisible && lp && (
                   <SpreadPage
                     page={lp}
                     pageIndex={spread.left!}
@@ -327,7 +384,7 @@ export default function EditPage() {
                     onPageDragEndCleanup={pageDrag.handlePageDragEndCleanup}
                   />
                 )}
-                {rp && (
+                {isVisible && rp && (
                   <SpreadPage
                     page={rp}
                     pageIndex={spread.right!}
