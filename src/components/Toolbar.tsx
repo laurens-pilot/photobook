@@ -4,7 +4,7 @@ import React from "react";
 import { Box, IconButton, Tooltip, Divider } from "@mui/material";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
-import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
+
 import TextFieldsIcon from "@mui/icons-material/TextFields";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
@@ -13,7 +13,7 @@ import { useBook } from "@/context/BookContext";
 
 interface ToolbarProps {
   onAddPhotos: () => void;
-  onTogglePhotoPool: () => void;
+
   onAddText: () => void;
   selectedSlotId: string | null;
   selectedPageId: string | null;
@@ -22,7 +22,6 @@ interface ToolbarProps {
 
 export default function Toolbar({
   onAddPhotos,
-  onTogglePhotoPool,
   onAddText,
   selectedSlotId,
   selectedPageId,
@@ -136,23 +135,7 @@ export default function Toolbar({
         </IconButton>
       </Tooltip>
 
-      <Tooltip title="Browse Photo Library" placement="right">
-        <IconButton
-          onClick={onTogglePhotoPool}
-          sx={{
-            width: 44,
-            height: 44,
-            color: "#888",
-            "&:hover": { color: "#08C225", bgcolor: "rgba(255,255,255,0.08)" },
-            borderRadius: 2,
-            transition: "all 0.2s",
-          }}
-        >
-          <PhotoLibraryIcon />
-        </IconButton>
-      </Tooltip>
-
-      <Tooltip title="Add Text" placement="right">
+<Tooltip title="Add Text" placement="right">
         <IconButton
           onClick={handleAddText}
           sx={{

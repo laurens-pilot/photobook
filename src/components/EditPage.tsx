@@ -7,7 +7,7 @@ import PageStrip from "./PageStrip";
 import Toolbar from "./Toolbar";
 import SpreadPage, { PICKER_WIDTH } from "./SpreadPage";
 import TextEditDialog from "./TextEditDialog";
-import PhotoPool from "./PhotoPool";
+
 import { useAutoScroll } from "@/hooks/useAutoScroll";
 import { usePhotoDrag } from "@/hooks/usePhotoDrag";
 import { usePageDrag } from "@/hooks/usePageDrag";
@@ -39,7 +39,6 @@ export default function EditPage() {
 
   // Hover & UI state
   const [hoveredPageId, setHoveredPageId] = useState<string | null>(null);
-  const [photoPoolOpen, setPhotoPoolOpen] = useState(false);
 
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -209,7 +208,7 @@ export default function EditPage() {
       {/* Left Toolbar */}
       <Toolbar
         onAddPhotos={handleAddPhotos}
-        onTogglePhotoPool={() => setPhotoPoolOpen((v) => !v)}
+
         onAddText={handleAddText}
         selectedSlotId={selectedSlotId}
         selectedPageId={selectedPageId}
@@ -350,15 +349,7 @@ export default function EditPage() {
         onChange={handleFileChange}
       />
 
-      {/* Photo Pool Drawer */}
-      <PhotoPool
-        open={photoPoolOpen}
-        onClose={() => setPhotoPoolOpen(false)}
-        selectedSlotId={selectedSlotId}
-        selectedPageId={selectedPageId}
-      />
-
-      {/* Text Edit Dialog */}
+{/* Text Edit Dialog */}
       <TextEditDialog
         open={editingTextBlock !== null}
         block={editingTextBlock}
