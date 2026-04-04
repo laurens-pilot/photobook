@@ -18,6 +18,30 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+/** Wraps text into lines that fit within maxWidth, breaking on word boundaries. */
+function wrapText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number
+): string[] {
+  if (!text) return [];
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let currentLine = words[0] ?? "";
+
+  for (let i = 1; i < words.length; i++) {
+    const testLine = currentLine + " " + words[i];
+    if (ctx.measureText(testLine).width > maxWidth && currentLine) {
+      lines.push(currentLine);
+      currentLine = words[i];
+    } else {
+      currentLine = testLine;
+    }
+  }
+  lines.push(currentLine);
+  return lines;
+}
+
 /** Lazily loads full-res photo URLs from IndexedDB, caching for the duration of an export. */
 function createPhotoUrlResolver() {
   const cache = new Map<string, string>();
@@ -155,6 +179,7 @@ export async function renderPageToCanvas(
   for (const block of page.textBlocks) {
     const bx = (block.x / 100) * width;
     const by = (block.y / 100) * height;
+    const bw = (block.width / 100) * width;
     const fontSize = Math.round(height * ((block.fontSize ?? 2.5) / 100));
     const color = block.color ?? "#1a1c1d";
     const rotation = block.rotation ?? 0;
@@ -172,7 +197,16 @@ export async function renderPageToCanvas(
         ? `bold ${fontSize}px 'Manrope', sans-serif`
         : `${fontSize}px 'Manrope', sans-serif`;
     ctx.textAlign = "left";
-    ctx.fillText(block.text, bx, by + fontSize);
+    ctx.textBaseline = "top";
+
+    // Word-wrap text within block width
+    const lines = wrapText(ctx, block.text, bw);
+    const lineHeight = fontSize * 1.2;
+    for (let li = 0; li < lines.length; li++) {
+      ctx.fillText(lines[li], bx, by + li * lineHeight);
+    }
+
+    ctx.textBaseline = "alphabetic";
     ctx.restore();
   }
 
