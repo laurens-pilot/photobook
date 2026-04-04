@@ -120,8 +120,17 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
   const [thumbnailUrls, setThumbnailUrls] = useState<Map<string, string>>(
     new Map()
   );
+  const thumbnailUrlsRef = useRef<Map<string, string>>(thumbnailUrls);
+  thumbnailUrlsRef.current = thumbnailUrls;
   const [book, setBookRaw] = useState<BookState>(emptyBook);
   const [currentSpreadIndex, setCurrentSpreadIndex] = useState(0);
+
+  // Revoke all object URLs on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      thumbnailUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   // Undo/Redo history
   const undoStackRef = useRef<BookState[]>([]);
