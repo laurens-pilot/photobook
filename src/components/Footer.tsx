@@ -4,16 +4,16 @@ import { useState } from "react";
 import { Box, Typography, Link, Dialog, DialogTitle, DialogContent, IconButton } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
-export default function Footer({ showPrivacyPolicy = false }: { showPrivacyPolicy?: boolean }) {
+export default function Footer({ showPrivacyPolicy = false, light = false }: { showPrivacyPolicy?: boolean; light?: boolean }) {
   const [privacyOpen, setPrivacyOpen] = useState(false);
 
   return (
     <Box
       component="footer"
       sx={{
-        bgcolor: "#141617",
+        bgcolor: light ? "#f8f8f8" : "#141617",
         py: 4,
-        borderTop: "1px solid rgba(255,255,255,0.06)",
+        borderTop: light ? "1px solid rgba(0,0,0,0.06)" : "1px solid rgba(255,255,255,0.06)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -28,7 +28,7 @@ export default function Footer({ showPrivacyPolicy = false }: { showPrivacyPolic
           sx={{
             fontFamily: "'Manrope', sans-serif",
             fontSize: "0.85rem",
-            color: "#777",
+            color: light ? "#888" : "#777",
             border: "none",
             background: "none",
             cursor: "pointer",
@@ -41,7 +41,7 @@ export default function Footer({ showPrivacyPolicy = false }: { showPrivacyPolic
         sx={{
           fontFamily: "'Manrope', sans-serif",
           fontSize: "0.75rem",
-          color: "#666",
+          color: light ? "#999" : "#666",
         }}
       >
         &copy; 2026 Ente Photobook. Handcrafted for your memories.

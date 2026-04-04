@@ -6,6 +6,7 @@ import { useBook } from "@/context/BookContext";
 
 export default function NavBar() {
   const { appView, setAppView, book, showPageStrip, setShowPageStrip } = useBook();
+  const isStart = appView === "start";
 
   return (
     <Box
@@ -16,13 +17,13 @@ export default function NavBar() {
         left: 0,
         right: 0,
         zIndex: 50,
-        bgcolor: "#141617",
+        bgcolor: isStart ? "#fff" : "#141617",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
         px: 4,
         height: 64,
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        borderBottom: isStart ? "1px solid rgba(0,0,0,0.06)" : "1px solid rgba(255,255,255,0.06)",
       }}
     >
       <Box
@@ -34,7 +35,7 @@ export default function NavBar() {
             fontSize: "1.25rem",
             fontWeight: 700,
             fontFamily: "'Manrope', sans-serif",
-            color: "#E2E2E4",
+            color: isStart ? "#1a1c1d" : "#E2E2E4",
           }}
         >
           Ente Photobook

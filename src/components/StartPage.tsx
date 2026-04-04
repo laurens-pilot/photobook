@@ -78,7 +78,7 @@ export default function StartPage() {
       <Box
         sx={{
           minHeight: "100vh",
-          bgcolor: "#1a1c1d",
+          bgcolor: "#fff",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -93,7 +93,7 @@ export default function StartPage() {
             fontFamily: "'Manrope', sans-serif",
             fontWeight: 700,
             fontSize: "1.25rem",
-            color: "#E2E2E4",
+            color: "#1a1c1d",
           }}
         >
           Processing your photos...
@@ -105,7 +105,7 @@ export default function StartPage() {
             sx={{
               height: 6,
               borderRadius: 3,
-              bgcolor: "#2a2c2d",
+              bgcolor: "#e8e8e8",
               "& .MuiLinearProgress-bar": {
                 background:
                   "linear-gradient(135deg, #006E0F 0%, #08C225 100%)",
@@ -126,7 +126,7 @@ export default function StartPage() {
     <Box
       sx={{
         minHeight: "100vh",
-        bgcolor: "#1a1c1d",
+        bgcolor: "#fff",
         display: "flex",
         flexDirection: "column",
         pt: 8,
@@ -157,7 +157,7 @@ export default function StartPage() {
             inset: 0,
             zIndex: 0,
             pointerEvents: "none",
-            opacity: 0.15,
+            opacity: 0.12,
             overflow: "hidden",
           }}
         >
@@ -234,7 +234,7 @@ export default function StartPage() {
               letterSpacing: "-0.02em",
               mb: 2,
               lineHeight: 1.1,
-              color: "#fff",
+              color: "#1a1c1d",
             }}
           >
             Your memories deserve a book
@@ -243,7 +243,7 @@ export default function StartPage() {
             sx={{
               fontFamily: "'Manrope', sans-serif",
               fontSize: "1.15rem",
-              color: "#888",
+              color: "#666",
               maxWidth: 560,
               lineHeight: 1.7,
               mb: 6,
@@ -275,7 +275,7 @@ export default function StartPage() {
                 bgcolor: "white",
                 p: 4,
                 borderRadius: 2,
-                boxShadow: "0px 12px 32px rgba(0, 0, 0, 0.3)",
+                boxShadow: "0px 12px 32px rgba(0, 0, 0, 0.1)",
                 transform: "rotate(-3deg)",
                 position: "relative",
                 zIndex: 20,
@@ -327,7 +327,7 @@ export default function StartPage() {
               sx={{
                 position: "absolute",
                 inset: 0,
-                bgcolor: "rgba(255,255,255,0.06)",
+                bgcolor: "rgba(0,0,0,0.04)",
                 borderRadius: 2,
                 transform: "rotate(3deg) translate(16px, 16px)",
                 zIndex: -1,
@@ -350,7 +350,7 @@ export default function StartPage() {
               px: 6,
               py: 2,
               mb: 3,
-              boxShadow: "0px 12px 32px rgba(0, 0, 0, 0.3)",
+              boxShadow: "0px 12px 32px rgba(8, 194, 37, 0.25)",
               "&:hover": {
                 transform: "scale(1.02)",
                 background:
@@ -381,7 +381,7 @@ export default function StartPage() {
             sx={{
               display: "flex",
               gap: 4,
-              color: "#777",
+              color: "#888",
               fontSize: "0.85rem",
             }}
           >
@@ -443,13 +443,13 @@ export default function StartPage() {
             >
               {feat.icon}
             </Box>
-            <Typography sx={{ fontWeight: 700, fontSize: "1.15rem", color: "#E2E2E4" }}>
+            <Typography sx={{ fontWeight: 700, fontSize: "1.15rem", color: "#1a1c1d" }}>
               {feat.title}
             </Typography>
             <Typography
               sx={{
                 fontFamily: "'Manrope', sans-serif",
-                color: "#888",
+                color: "#666",
                 lineHeight: 1.7,
                 fontSize: "0.95rem",
               }}
@@ -460,7 +460,7 @@ export default function StartPage() {
         ))}
       </Box>
 
-      <Footer showPrivacyPolicy />
+      <Footer showPrivacyPolicy light />
     </Box>
   );
 }
