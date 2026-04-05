@@ -51,7 +51,6 @@ function PhotoSlotRenderer({
   pageId: string;
 }) {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
-  const { updateSlot } = useBook();
 
   const sx = (slot.x / 100) * pageWidth;
   const sy = (slot.y / 100) * pageHeight;
@@ -81,7 +80,7 @@ function PhotoSlotRenderer({
     ctx.rect(sx, sy, sw, sh);
   };
 
-  // Calculate image draw position
+  // Calculate image draw position (cover-fit inside the slot, shifted by crop).
   const drawProps = useMemo(() => {
     if (!image) return null;
     const imgAspect = image.naturalWidth / image.naturalHeight;
@@ -114,7 +113,10 @@ function PhotoSlotRenderer({
         onClick={onClick}
         onTap={onClick}
       />
-      {/* Photo */}
+      {/* Photo — non-interactive. Crop panning is handled by an HTML overlay
+          in SpreadPage.tsx (see the slot overlay's onMouseDown). Running drag
+          inside Konva was unreliable in Chromium on Linux due to event
+          layering between the stacked <div> overlays and the canvas. */}
       {image && drawProps && (
         <KonvaImage
           image={image}
@@ -122,21 +124,7 @@ function PhotoSlotRenderer({
           y={drawProps.y}
           width={drawProps.width}
           height={drawProps.height}
-          onClick={onClick}
-          onTap={onClick}
-          draggable={isInteractive && isSelected}
-          onDragEnd={(e) => {
-            if (!isInteractive) return;
-            // Update crop position based on drag
-            const newX = (e.target.x() - sx) / (sw - drawProps.width) || 0.5;
-            const newY = (e.target.y() - sy) / (sh - drawProps.height) || 0.5;
-            updateSlot(pageId, slot.id, {
-              cropX: Math.max(0, Math.min(1, newX)),
-              cropY: Math.max(0, Math.min(1, newY)),
-            });
-            // Reset position since we store in state
-            e.target.position({ x: drawProps.x, y: drawProps.y });
-          }}
+          listening={false}
         />
       )}
       {/* Drag source dimming */}

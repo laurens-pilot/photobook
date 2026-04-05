@@ -265,7 +265,7 @@ export default function SpreadPage({
   onPageDropOnPage,
   onPageDragEndCleanup,
 }: SpreadPageProps) {
-  const { thumbnailUrls, removePage, setPageLayout, setPagePadding, updatePage } = useBook();
+  const { thumbnailUrls, removePage, setPageLayout, setPagePadding, updatePage, updateSlot, photos } = useBook();
 
   // Caption editing
   const [editingCaption, setEditingCaption] = useState<CaptionPosition | null>(null);
@@ -418,10 +418,16 @@ export default function SpreadPage({
             }}
           />
         )}
-        {/* Drag-and-drop overlay divs for photo slots */}
+        {/* Drag-and-drop overlay divs for photo slots.
+            - Unselected + has photo: draggable=true for HTML5 rearrange.
+            - Selected + has photo:   onMouseDown drives crop panning via
+              document-level mousemove/mouseup listeners. Done in HTML (not
+              Konva) because canvas + stacked overlay divs caused unreliable
+              event delivery in Chromium/Linux. */}
         {page.slots.map((slot) => {
           const isSelected =
             selectedPageId === page.id && selectedSlotId === slot.id;
+          const canPanCrop = isSelected && !!slot.photoId && !dragSourceInfo;
           return (
             <div
               key={slot.id}
@@ -438,6 +444,70 @@ export default function SpreadPage({
               onDrop={(e) => onPhotoDrop(e, page.id, slot.id)}
               onDragEnd={onPhotoDragEnd}
               onClick={() => onSlotClick(page.id, slot.id)}
+              onMouseDown={
+                canPanCrop
+                  ? (e) => {
+                      if (e.button !== 0) return;
+                      const photo = photos.find((p) => p.id === slot.photoId);
+                      if (!photo) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const startX = e.clientX;
+                      const startY = e.clientY;
+                      const origCropX = slot.cropX;
+                      const origCropY = slot.cropY;
+                      const sw = (slot.width / 100) * pageWidth;
+                      const sh = (slot.height / 100) * pageHeight;
+                      const imgAspect = photo.width / photo.height;
+                      const slotAspect = sw / sh;
+                      let drawW: number, drawH: number;
+                      if (imgAspect > slotAspect) {
+                        drawH = sh * slot.cropZoom;
+                        drawW = drawH * imgAspect;
+                      } else {
+                        drawW = sw * slot.cropZoom;
+                        drawH = drawW / imgAspect;
+                      }
+                      // slack is <= 0 (image is larger than slot in the
+                      // panned axis). If 0, no panning possible on that axis.
+                      const slackX = sw - drawW;
+                      const slackY = sh - drawH;
+                      const onMove = (ev: MouseEvent) => {
+                        const dx = ev.clientX - startX;
+                        const dy = ev.clientY - startY;
+                        const newCropX =
+                          slackX !== 0
+                            ? Math.max(
+                                0,
+                                Math.min(1, origCropX + dx / slackX)
+                              )
+                            : origCropX;
+                        const newCropY =
+                          slackY !== 0
+                            ? Math.max(
+                                0,
+                                Math.min(1, origCropY + dy / slackY)
+                              )
+                            : origCropY;
+                        if (
+                          newCropX !== slot.cropX ||
+                          newCropY !== slot.cropY
+                        ) {
+                          updateSlot(page.id, slot.id, {
+                            cropX: newCropX,
+                            cropY: newCropY,
+                          });
+                        }
+                      };
+                      const onUp = () => {
+                        document.removeEventListener("mousemove", onMove);
+                        document.removeEventListener("mouseup", onUp);
+                      };
+                      document.addEventListener("mousemove", onMove);
+                      document.addEventListener("mouseup", onUp);
+                    }
+                  : undefined
+              }
               style={{
                 position: "absolute",
                 left: (slot.x / 100) * pageWidth,
@@ -446,13 +516,11 @@ export default function SpreadPage({
                 height: (slot.height / 100) * pageHeight,
                 cursor: slot.photoId
                   ? isSelected
-                    ? "default"
+                    ? "move"
                     : "grab"
                   : "default",
                 pointerEvents:
-                  (isSelected && !dragSourceInfo) || pageDragSource !== null
-                    ? "none"
-                    : "auto",
+                  pageDragSource !== null ? "none" : "auto",
                 zIndex: 2,
               }}
             />
