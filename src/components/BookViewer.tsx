@@ -36,17 +36,44 @@ const BookViewer = forwardRef<BookViewerHandle, BookViewerProps>(
     // Ref to hold latest onPageChange to avoid stale closures in event handler
     const onPageChangeRef = useRef(onPageChange);
     onPageChangeRef.current = onPageChange;
+    // Remembered page index so re-initializing PageFlip (e.g. after a resize)
+    // does not jump the reader back to the cover.
+    const startPageRef = useRef(0);
 
     useEffect(() => {
-      const updateSize = () => {
-        if (containerRef.current) {
-          const rect = containerRef.current.getBoundingClientRect();
-          setDimensions({ width: rect.width, height: rect.height });
-        }
+      let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+      const applySize = () => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        setDimensions((prev) => {
+          // Ignore no-op resize events — browsers fire `resize` for layout
+          // changes that don't actually change our container size. Re-running
+          // the PageFlip init effect on no-op resizes is what caused the book
+          // view to randomly vanish.
+          if (
+            Math.abs(prev.width - rect.width) < 0.5 &&
+            Math.abs(prev.height - rect.height) < 0.5
+          ) {
+            return prev;
+          }
+          return { width: rect.width, height: rect.height };
+        });
       };
-      updateSize();
-      window.addEventListener("resize", updateSize);
-      return () => window.removeEventListener("resize", updateSize);
+
+      // Initial measurement runs synchronously so the first render uses real
+      // dimensions as soon as possible.
+      applySize();
+
+      const onResize = () => {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applySize, 150);
+      };
+      window.addEventListener("resize", onResize);
+      return () => {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        window.removeEventListener("resize", onResize);
+      };
     }, []);
 
     // Size pages to fill available space — constrained by both height and width
@@ -73,6 +100,16 @@ const BookViewer = forwardRef<BookViewerHandle, BookViewerProps>(
     const safeDestroy = useCallback(() => {
       if (pageFlipRef.current) {
         try {
+          // Remember the current page so we can restore it after a re-init
+          // (e.g. triggered by a window resize).
+          const current = pageFlipRef.current.getCurrentPageIndex?.();
+          if (typeof current === "number" && current >= 0) {
+            startPageRef.current = current;
+          }
+        } catch {
+          // ignore — fall back to last remembered value
+        }
+        try {
           pageFlipRef.current.destroy();
         } catch {
           // page-flip can throw if UI wasn't fully initialized
@@ -94,6 +131,13 @@ const BookViewer = forwardRef<BookViewerHandle, BookViewerProps>(
           bookRef.current.querySelectorAll(".page-flip-page");
         if (pageElements.length === 0) return;
 
+        // Clamp remembered start page against the current page count in case
+        // pages were removed while we were unmounted.
+        const startPage = Math.min(
+          Math.max(startPageRef.current, 0),
+          Math.max(pages.length - 1, 0)
+        );
+
         try {
           const pf = new PageFlip(bookRef.current, {
             width: pageWidth,
@@ -105,7 +149,7 @@ const BookViewer = forwardRef<BookViewerHandle, BookViewerProps>(
             flippingTime: 800,
             useMouseEvents: true,
             swipeDistance: 30,
-            startPage: 0,
+            startPage,
             drawShadow: true,
             showPageCorners: true,
             usePortrait: false,
@@ -115,13 +159,14 @@ const BookViewer = forwardRef<BookViewerHandle, BookViewerProps>(
 
           pf.on("flip", (e: any) => {
             const pageIndex = e.data as number;
+            startPageRef.current = pageIndex;
             onPageChangeRef.current(pageIndex);
           });
 
           pageFlipRef.current = pf;
 
-          // Report initial page
-          onPageChangeRef.current(0);
+          // Report initial page so the parent label matches what is shown.
+          onPageChangeRef.current(startPage);
         } catch (e) {
           console.warn("PageFlip initialization failed:", e);
         }
@@ -146,6 +191,14 @@ const BookViewer = forwardRef<BookViewerHandle, BookViewerProps>(
         }}
       >
         <Box
+          // CRITICAL: key includes every value the PageFlip init effect
+          // depends on. PageFlip.destroy() removes this very element from the
+          // DOM (see node_modules/page-flip/src/PageFlip.ts: `this.block.remove()`
+          // and UI.destroy clearing its children). Without a key, React
+          // keeps reusing the detached element across re-inits and the book
+          // silently vanishes. Re-keying guarantees a fresh, attached DOM
+          // subtree every time the effect runs.
+          key={`book-${pageWidth}x${pageHeight}-${pages.length}`}
           ref={bookRef}
           sx={{
             width: pageWidth * 2,
