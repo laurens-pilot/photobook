@@ -399,7 +399,9 @@ export default function SpreadPage({
             zIndex: 1,
             cursor: isInterior ? "grab" : "default",
             pointerEvents:
-              hasSelectedSlotOnPage && pageDragSource === null
+              hasSelectedSlotOnPage &&
+              pageDragSource === null &&
+              !dragSourceInfo
                 ? "none"
                 : "auto",
           }}
