@@ -26,30 +26,30 @@ const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: "'Manrope', sans-serif",
+    fontFamily: "var(--font-manrope), sans-serif",
     h1: {
-      fontFamily: "'Manrope', sans-serif",
+      fontFamily: "var(--font-manrope), sans-serif",
       fontWeight: 800,
     },
     h2: {
-      fontFamily: "'Manrope', sans-serif",
+      fontFamily: "var(--font-manrope), sans-serif",
       fontWeight: 700,
     },
     h3: {
-      fontFamily: "'Manrope', sans-serif",
+      fontFamily: "var(--font-manrope), sans-serif",
       fontWeight: 700,
     },
     h4: {
-      fontFamily: "'Manrope', sans-serif",
+      fontFamily: "var(--font-manrope), sans-serif",
     },
     body1: {
-      fontFamily: "'Manrope', sans-serif",
+      fontFamily: "var(--font-manrope), sans-serif",
     },
     body2: {
-      fontFamily: "'Manrope', sans-serif",
+      fontFamily: "var(--font-manrope), sans-serif",
     },
     button: {
-      fontFamily: "'Manrope', sans-serif",
+      fontFamily: "var(--font-manrope), sans-serif",
       fontWeight: 700,
       textTransform: "none",
     },

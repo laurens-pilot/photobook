@@ -4,6 +4,11 @@ import type { BookPage, Photo } from "./types";
 import { A5_WIDTH_MM, A5_HEIGHT_MM } from "./types";
 import { getPhotoBlob } from "./db";
 
+function getManropeFont(): string {
+  if (typeof window === "undefined") return "sans-serif";
+  return getComputedStyle(document.documentElement).getPropertyValue("--font-manrope").trim() || "sans-serif";
+}
+
 const DPI = 300;
 const A5_WIDTH_PX = Math.round((A5_WIDTH_MM / 25.4) * DPI);
 const A5_HEIGHT_PX = Math.round((A5_HEIGHT_MM / 25.4) * DPI);
@@ -145,7 +150,7 @@ export async function renderPageToCanvas(
   // Draw captions
   if (page.topCaption) {
     ctx.fillStyle = "#1a1c1d";
-    ctx.font = `${Math.round(height * 0.025)}px 'Manrope', sans-serif`;
+    ctx.font = `${Math.round(height * 0.025)}px ${getManropeFont()}, sans-serif`;
     ctx.textAlign = "center";
     ctx.fillText(page.topCaption, width / 2, height * 0.04);
   }
@@ -169,7 +174,7 @@ export async function renderPageToCanvas(
       ctx.fillRect(0, stripY, width, stripHeight);
 
       ctx.fillStyle = "#999";
-      ctx.font = `${byFontSize}px 'Manrope', sans-serif`;
+      ctx.font = `${byFontSize}px ${getManropeFont()}, sans-serif`;
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
       ctx.fillText("By", startX, yCenter + byFontSize * 0.1);
@@ -188,7 +193,7 @@ export async function renderPageToCanvas(
     }
   } else if (page.bottomCaption) {
     ctx.fillStyle = "#1a1c1d";
-    ctx.font = `${Math.round(height * 0.025)}px 'Manrope', sans-serif`;
+    ctx.font = `${Math.round(height * 0.025)}px ${getManropeFont()}, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
     ctx.fillText(page.bottomCaption, width / 2, height * 0.98);
@@ -214,8 +219,8 @@ export async function renderPageToCanvas(
     ctx.fillStyle = color;
     ctx.font =
       block.style === "title"
-        ? `bold ${fontSize}px 'Manrope', sans-serif`
-        : `${fontSize}px 'Manrope', sans-serif`;
+        ? `bold ${fontSize}px ${getManropeFont()}, sans-serif`
+        : `${fontSize}px ${getManropeFont()}, sans-serif`;
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
 

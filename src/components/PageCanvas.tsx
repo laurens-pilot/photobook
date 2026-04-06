@@ -8,6 +8,14 @@ import { A5_ASPECT } from "@/lib/types";
 import { useBook } from "@/context/BookContext";
 import { getCachedImage, loadImageCached } from "@/lib/imageCache";
 
+let _canvasManrope: string | null = null;
+function getManropeFont(): string {
+  if (_canvasManrope) return _canvasManrope;
+  if (typeof window === "undefined") return "sans-serif";
+  _canvasManrope = getComputedStyle(document.documentElement).getPropertyValue("--font-manrope").trim() || "sans-serif";
+  return _canvasManrope;
+}
+
 export type CaptionPosition = "top" | "bottom";
 
 interface PageCanvasProps {
@@ -233,7 +241,7 @@ function TextBlockRenderer({
         y={by}
         text={displayText}
         fontSize={fontSize}
-        fontFamily="'Manrope', sans-serif"
+        fontFamily={getManropeFont()}
         fontStyle={block.style === "title" ? "bold" : "normal"}
         fill={displayColor}
         rotation={rotation}
@@ -357,7 +365,7 @@ function CaptionText({
       width={pageWidth}
       text={text}
       fontSize={fontSize}
-      fontFamily="'Manrope', sans-serif"
+      fontFamily={getManropeFont()}
       fill="#1a1c1d"
       align="center"
     />
@@ -450,7 +458,7 @@ export default function PageCanvas({
         text=""
         fontSize={8}
         fill="#ccc"
-        fontFamily="'Manrope', sans-serif"
+        fontFamily={getManropeFont()}
       />
     </>
   );

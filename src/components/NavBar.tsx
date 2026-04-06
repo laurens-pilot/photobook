@@ -217,7 +217,7 @@ function StartNavBar({ onLogoClick }: { onLogoClick: () => void }) {
                     ? "rgba(255, 255, 255, 0.52)"
                     : "transparent",
                   color: "rgba(21, 21, 21, 0.76)",
-                  fontFamily: "'Sora', 'Avenir Next', 'Segoe UI', sans-serif",
+                  fontFamily: "var(--font-sora), 'Avenir Next', 'Segoe UI', sans-serif",
                   fontSize: "0.92rem",
                   fontWeight: 500,
                   letterSpacing: 0,
@@ -283,7 +283,7 @@ export default function NavBar() {
           sx={{
             fontSize: "1.25rem",
             fontWeight: 700,
-            fontFamily: "'Manrope', sans-serif",
+            fontFamily: "var(--font-manrope), sans-serif",
             color: "#E2E2E4",
           }}
         >

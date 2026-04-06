@@ -80,7 +80,7 @@ export default function TextToolbar({
     alignItems: "center",
     justifyContent: "center",
     fontSize: 13,
-    fontFamily: "'Manrope', sans-serif",
+    fontFamily: "var(--font-manrope), sans-serif",
     padding: 0,
     transition: "background 0.15s",
   };
@@ -266,7 +266,7 @@ export default function TextToolbar({
               style={{
                 color: "rgba(255,255,255,0.7)",
                 fontSize: 11,
-                fontFamily: "'Manrope', sans-serif",
+                fontFamily: "var(--font-manrope), sans-serif",
                 minWidth: 32,
                 textAlign: "right",
               }}
