@@ -128,42 +128,6 @@ export default function StartPage() {
         overflow: "hidden",
       }}
     >
-      {/* Background blurs — at page level so they extend behind the nav */}
-      <Box
-        sx={{
-          position: "absolute",
-          inset: 0,
-          zIndex: 0,
-          pointerEvents: "none",
-          opacity: 0.12,
-        }}
-      >
-        <Box
-          sx={{
-            position: "absolute",
-            top: -96,
-            left: -96,
-            width: 384,
-            height: 384,
-            bgcolor: "#08C225",
-            borderRadius: "50%",
-            filter: "blur(120px)",
-          }}
-        />
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            right: -96,
-            width: 500,
-            height: 500,
-            bgcolor: "#A4F795",
-            borderRadius: "50%",
-            filter: "blur(160px)",
-          }}
-        />
-      </Box>
-
       {/* Hero */}
       <Box
         component="main"
