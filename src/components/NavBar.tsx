@@ -11,10 +11,10 @@ type NavItem =
   | { label: string; href: string }
 
 const navItems: NavItem[] = [
-  { label: "Home", href: "https://ente.com/?utm_source=photobook" },
-  { label: "About", href: "https://ente.com/about?utm_source=photobook" },
-  { label: "Blog", href: "https://ente.com/blog?utm_source=photobook" },
-  { label: "Download", href: "https://ente.com/download?utm_source=photobook" },
+  { label: "Home", href: "https://ente.com/" },
+  { label: "About", href: "https://ente.com/about" },
+  { label: "Blog", href: "https://ente.com/blog" },
+  { label: "Download", href: "https://ente.com/download" },
 ];
 
 function StartNavBar({ onLogoClick }: { onLogoClick: () => void }) {
@@ -94,9 +94,9 @@ function StartNavBar({ onLogoClick }: { onLogoClick: () => void }) {
         >
           <Box
             component="a"
-            href="https://ente.com/?utm_source=photobook"
+            href="https://ente.com/"
             target="_blank"
-            rel="noopener noreferrer"
+            rel="noopener"
             onClick={closeNav}
             sx={{
               display: "inline-flex",
@@ -200,7 +200,7 @@ function StartNavBar({ onLogoClick }: { onLogoClick: () => void }) {
                 component="a"
                 href={item.href}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener"
                 onClick={closeNav}
                 sx={{
                   display: "inline-flex",
