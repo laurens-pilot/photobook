@@ -154,8 +154,8 @@ export async function renderPageToCanvas(
 
   // Draw captions
   if (page.topCaption) {
-    ctx.fillStyle = "#1a1c1d";
-    ctx.font = `${Math.round(height * 0.025)}px ${getNunitoFont()}, sans-serif`;
+    ctx.fillStyle = "#555555";
+    ctx.font = `bold ${Math.round(height * 0.025)}px ${getNunitoFont()}, sans-serif`;
     ctx.textAlign = "center";
     ctx.fillText(page.topCaption, width / 2, height * 0.04);
   }
@@ -197,8 +197,8 @@ export async function renderPageToCanvas(
       console.warn("Failed to draw ente branding:", e);
     }
   } else if (page.bottomCaption) {
-    ctx.fillStyle = "#1a1c1d";
-    ctx.font = `${Math.round(height * 0.025)}px ${getNunitoFont()}, sans-serif`;
+    ctx.fillStyle = "#555555";
+    ctx.font = `bold ${Math.round(height * 0.025)}px ${getNunitoFont()}, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
     ctx.fillText(page.bottomCaption, width / 2, height * 0.98);
@@ -211,7 +211,7 @@ export async function renderPageToCanvas(
     const by = (block.y / 100) * height;
     const bw = (block.width / 100) * width;
     const fontSize = Math.round(height * ((block.fontSize ?? 2.5) / 100));
-    const color = block.color ?? "#1a1c1d";
+    const color = block.color ?? "#555555";
     const rotation = block.rotation ?? 0;
 
     ctx.save();
@@ -223,9 +223,7 @@ export async function renderPageToCanvas(
 
     ctx.fillStyle = color;
     ctx.font =
-      block.style === "title"
-        ? `bold ${fontSize}px ${getNunitoFont()}, sans-serif`
-        : `${fontSize}px ${getNunitoFont()}, sans-serif`;
+      `bold ${fontSize}px ${getNunitoFont()}, sans-serif`;
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
 

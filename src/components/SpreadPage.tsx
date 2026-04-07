@@ -621,7 +621,7 @@ export default function SpreadPage({
           const by = (block.y / 100) * pageHeight;
           const bw = (block.width / 100) * pageWidth;
           const fontSize = pageHeight * ((block.fontSize ?? 2.5) / 100);
-          const color = block.color ?? "#1a1c1d";
+          const color = block.color ?? "#555555";
           const rotation = block.rotation ?? 0;
           return (
             <input
@@ -660,7 +660,7 @@ export default function SpreadPage({
                 background: "rgba(255,255,255,0.85)",
                 fontFamily: "var(--font-nunito), sans-serif",
                 fontSize: fontSize,
-                fontWeight: block.style === "title" ? 700 : 400,
+                fontWeight: 700,
                 color: color,
                 textAlign: "center" as const,
                 padding: "2px 6px",
@@ -723,7 +723,8 @@ export default function SpreadPage({
                 background: "white",
                 fontFamily: "var(--font-nunito), sans-serif",
                 fontSize: captionFontSize,
-                color: "#1a1c1d",
+                fontWeight: 700,
+                color: "#555555",
                 textAlign: "center" as const,
                 padding: 0,
                 borderRadius: 2,
@@ -756,6 +757,7 @@ export default function SpreadPage({
                   style={{
                     fontFamily: "var(--font-nunito), sans-serif",
                     fontSize: captionFontSize,
+                    fontWeight: 700,
                     color: "#aaa",
                     pointerEvents: "none",
                   }}
@@ -789,7 +791,8 @@ export default function SpreadPage({
                 background: "white",
                 fontFamily: "var(--font-nunito), sans-serif",
                 fontSize: captionFontSize,
-                color: "#1a1c1d",
+                fontWeight: 700,
+                color: "#555555",
                 textAlign: "center" as const,
                 padding: 0,
                 borderRadius: 2,
@@ -822,6 +825,7 @@ export default function SpreadPage({
                   style={{
                     fontFamily: "var(--font-nunito), sans-serif",
                     fontSize: captionFontSize,
+                    fontWeight: 700,
                     color: "#aaa",
                     pointerEvents: "none",
                   }}

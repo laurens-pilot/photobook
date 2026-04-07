@@ -227,7 +227,7 @@ function TextBlockRenderer({
   const bw = (block.width / 100) * pageWidth;
 
   const fontSize = pageHeight * ((block.fontSize ?? 2.5) / 100);
-  const color = block.color ?? "#1a1c1d";
+  const color = block.color ?? "#555555";
   const rotation = block.rotation ?? 0;
 
   // Hide text while inline editing
@@ -245,7 +245,7 @@ function TextBlockRenderer({
         text={displayText}
         fontSize={fontSize}
         fontFamily={getNunitoFont()}
-        fontStyle={block.style === "title" ? "bold" : "normal"}
+        fontStyle="bold"
         fill={displayColor}
         rotation={rotation}
         listening={false}
@@ -369,7 +369,8 @@ function CaptionText({
       text={text}
       fontSize={fontSize}
       fontFamily={getNunitoFont()}
-      fill="#1a1c1d"
+      fontStyle="bold"
+      fill="#555555"
       align="center"
     />
   );

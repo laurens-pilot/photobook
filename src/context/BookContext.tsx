@@ -805,7 +805,7 @@ export function BookProvider({ children }: { children: React.ReactNode }) {
       height: 15,
       style: "body",
       alignment: "right",
-      color: "#1a1c1d",
+      color: "#555555",
       rotation: 0,
       fontSize: 2.5,
     };

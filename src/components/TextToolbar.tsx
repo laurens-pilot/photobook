@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import type { TextBlock } from "@/lib/types";
 
 const PRESET_COLORS = [
-  "#1a1c1d",
+  "#555555",
   "#ffffff",
   "#08C225",
   "#3B82F6",
@@ -163,7 +163,7 @@ export default function TextToolbar({
               width: 16,
               height: 16,
               borderRadius: 3,
-              background: block.color ?? "#1a1c1d",
+              background: block.color ?? "#555555",
               border: "2px solid rgba(255,255,255,0.3)",
             }}
           />
@@ -198,7 +198,7 @@ export default function TextToolbar({
                   borderRadius: 4,
                   background: c,
                   border:
-                    (block.color ?? "#1a1c1d") === c
+                    (block.color ?? "#555555") === c
                       ? "2px solid #08C225"
                       : c === "#ffffff"
                         ? "1px solid rgba(255,255,255,0.3)"
